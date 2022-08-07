@@ -80,17 +80,16 @@ class Pet(QWidget):
         self.menu = self.bar.addMenu('菜单')
 
         self.pets = self.menu.addMenu('人物')
-        bbl = QAction('芭芭拉', self)
-        bbl.triggered.connect(self.bbl)
-        kq = QAction('刻晴', self)
-        kq.triggered.connect(self.kq)
-        dlk = QAction('迪卢克', self)
-        dlk.triggered.connect(self.dlk)
+        bbl = QAction('芭芭拉', self).triggered.connect(self.bbl)
+        kq = QAction('刻晴', self).triggered.connect(self.kq)
+        dlk = QAction('迪卢克', self).triggered.connect(self.dlk)
+        kl = QAction('可莉', self).triggered.connect(self.kl)
 
 
         self.pets.addAction(bbl)
         self.pets.addAction(kq)
         self.pets.addAction(dlk)
+        self.pets.addAction(kl)
 
         show = QAction('显示', self)
         show.triggered.connect(self.showwin)
@@ -161,6 +160,11 @@ class Pet(QWidget):
     def dlk(self):
         # 迪卢克
         self.reshow('yuanshen/迪卢克')
+        self.timer.start(60)
+
+    def kl(self):
+        # 可莉
+        self.reshow('yuanshen/可莉')
         self.timer.start(60)
 
     def mousePressEvent(self, event):
