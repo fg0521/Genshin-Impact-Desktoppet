@@ -1,19 +1,24 @@
 import os
 import sys
-import pygame
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
-from PIL import Image
+import pygame.mixer as mixer
+from PyQt5.QtCore import QTimer, Qt, QSize, QEvent
+from PyQt5.QtGui import QPixmap, QFont, QIcon, QImage, QCursor
+from PyQt5.QtWidgets import QWidget, QToolTip, QLabel, QSystemTrayIcon, QMenuBar, QAction, QMenu, qApp, QApplication
+import PyQt5.sip
 from config import args,dic
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(BASE_DIR, 'yuanshen'))
 
 class Pet(QWidget):
     def __init__(self):
         super(Pet, self).__init__()
         # 初始化为显示可莉
-        self.file_name = args.bbl  # 文件夹名称
+        self.file_name = args.dlk  # 文件夹名称
         self.file_list = sorted(os.listdir(self.file_name))  # 对文件夹里面的所有图片进行排序
-        self.img = Image.open(os.path.join(self.file_name,str(self.file_list[1])))  # 获取第一张图片作为托盘图标
+        # img = QImage()
+        self.img =QImage().load(os.path.join(self.file_name,str(self.file_list[1])))  # 获取第一张图片作为托盘图标
+
+        # self.img = Image.open(os.path.join(self.file_name,str(self.file_list[1])))  # 获取第一张图片作为托盘图标
         # self.w, self.h = self.img.size[0], self.img.size[1]  # 获取图片大小
         self.wt = 400
         self.ht = 400
@@ -80,10 +85,14 @@ class Pet(QWidget):
         self.menu = self.bar.addMenu('菜单')
 
         self.pets = self.menu.addMenu('人物')
-        bbl = QAction('芭芭拉', self).triggered.connect(self.bbl)
-        kq = QAction('刻晴', self).triggered.connect(self.kq)
-        dlk = QAction('迪卢克', self).triggered.connect(self.dlk)
-        kl = QAction('可莉', self).triggered.connect(self.kl)
+        bbl = QAction('芭芭拉', self)
+        bbl.triggered.connect(self.bbl)
+        kq = QAction('刻晴', self)
+        kq.triggered.connect(self.kq)
+        dlk = QAction('迪卢克', self)
+        dlk.triggered.connect(self.dlk)
+        kl = QAction('可莉', self)
+        kl.triggered.connect(self.kl)
 
 
         self.pets.addAction(bbl)
@@ -117,7 +126,9 @@ class Pet(QWidget):
         self.lbl.deleteLater()      # 清空Label
         self.file_name = name
         self.file_list = sorted(os.listdir(self.file_name))
-        self.img = Image.open(os.path.join(self.file_name,str(self.file_list[1])))
+        self.img =QImage().load(os.path.join(self.file_name,str(self.file_list[1])))  # 获取第一张图片作为托盘图标
+
+        # self.img = Image.open(os.path.join(self.file_name,str(self.file_list[1])))
         QToolTip.setFont(QFont('SansSerif', 20))
         self.setToolTip(dic[self.file_name])
         self.setGeometry(0, 400, self.wt, self.ht)
@@ -227,10 +238,10 @@ class Pet(QWidget):
     def paly_music(self, s):
         if self.music_player:
             if s in ['bbl','kl','kq']:
-                pygame.mixer.init()
-                pygame.mixer.music.load('./music/' + s + '.mp3')
-                if not pygame.mixer.music.get_busy():
-                    pygame.mixer.music.play()
+                mixer.init()
+                mixer.music.load('./music/' + s + '.mp3')
+                if not mixer.music.get_busy():
+                    mixer.music.play()
 
 
 if __name__ == '__main__':
