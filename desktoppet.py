@@ -4,14 +4,15 @@ import sys
 import time
 
 import pygame.mixer as mixer
-from PyQt5.QtCore import QTimer, Qt, QSize, QEvent
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QPixmap, QFont, QIcon, QImage, QCursor
-from PyQt5.QtWidgets import QWidget, QToolTip, QLabel, QSystemTrayIcon, QMenuBar, QAction, QMenu, qApp, QApplication
+from PyQt5.QtWidgets import QSystemTrayIcon, QMenuBar, QAction, QMenu, qApp, QApplication,QMainWindow
 import PyQt5.sip
 from config import args, dic
 
 
-class Pet(QWidget):
+class Pet(QMainWindow):
     def __init__(self):
         super(Pet, self).__init__()
         self.role_name = args.kl  # 文件夹名称
@@ -50,7 +51,14 @@ class Pet(QWidget):
         """
         # self.setToolTip(dic[self.role_name])
         self.setGeometry(0, 400, self.wt, self.ht)  # 设置窗口和位置
-        self.lbl = QLabel(self)  # 初始化一个QLabel对象
+
+        # 初始化一个QLabel对象
+        self.lbl = QtWidgets.QLabel(self)
+        self.lbl.setStyleSheet("QLabel{background-color :black;}")
+        self.lbl.setScaledContents(True)
+        self.setCentralWidget(self.lbl)
+
+
         self.index = 1
         self.pic_url = os.path.join(self.file_path, str(self.file_list[self.index]))
         self.pm = QPixmap(self.pic_url)  # 图像显示
