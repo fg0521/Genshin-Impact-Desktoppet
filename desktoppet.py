@@ -4,12 +4,23 @@ import sys
 import time
 
 import pygame.mixer as mixer
-from PyQt5 import QtWidgets
-from PyQt5.QtCore import QTimer, Qt
-from PyQt5.QtGui import QPixmap, QFont, QIcon, QImage, QCursor
+from PyQt5 import QtWidgets, QtGui
+from PyQt5.QtCore import QTimer, Qt, QSize, QThread
+from PyQt5.QtGui import QPixmap, QFont, QIcon, QImage, QCursor, QBitmap
 from PyQt5.QtWidgets import QSystemTrayIcon, QMenuBar, QAction, QMenu, qApp, QApplication,QMainWindow
 import PyQt5.sip
 from config import args, dic
+
+
+class MyThread(QThread):
+    def __init__(self):
+        super().__init__()
+
+    # 开启线程后默认执行
+    def run(self):
+        for i in range(10):
+            print("执行....%d" % (i + 1))
+            time.sleep(1)
 
 
 class Pet(QMainWindow):
@@ -20,8 +31,11 @@ class Pet(QMainWindow):
         self.file_path = self.pre_path + self.role_name
         self.file_list = sorted(os.listdir(self.file_path))  # 对文件夹里面的所有图片进行排序
         self.img = QImage().load(os.path.join(self.file_path, str(self.file_list[1])))  # 获取第一张图片作为托盘图标
+        self.scale = 1
         self.wt = 300
         self.ht = 300
+        self.pos_x = 300
+        self.pos_y = 300
         self.audio_player = False
         self.bgmusic_player = False
         self.tp = QSystemTrayIcon(self)  # 初始化系统托盘
@@ -42,7 +56,12 @@ class Pet(QMainWindow):
         else:
             self.index = 1
         self.pic_url = os.path.join(self.file_path, str(self.file_list[self.index]))
-        self.pm = QPixmap(self.pic_url)
+
+        self.pm = QPixmap(self.pic_url,"0", Qt.AvoidDither | Qt.ThresholdDither | Qt.ThresholdAlphaDither).scaled(int(self.scale*self.wt),int(self.scale*self.wt))
+        # print(self.pm.size())
+        self.resize(self.pm.size())
+        # self.pm1 = QBitmap(self.pic_url)
+        self.setMask(self.pm.mask())
         self.lbl.setPixmap(self.pm)
 
     def init_window(self):
@@ -50,19 +69,23 @@ class Pet(QMainWindow):
         初始化窗口
         """
         # self.setToolTip(dic[self.role_name])
-        self.setGeometry(0, 400, self.wt, self.ht)  # 设置窗口和位置
+        self.setGeometry(0, 400, self.pos_x, self.pos_y)  # 设置窗口和位置
 
         # 初始化一个QLabel对象
         self.lbl = QtWidgets.QLabel(self)
-        self.lbl.setStyleSheet("QLabel{background-color :black;}")
+        # self.lbl.setStyleSheet("QLabel{background-color :black;}")
         self.lbl.setScaledContents(True)
         self.setCentralWidget(self.lbl)
 
 
         self.index = 1
         self.pic_url = os.path.join(self.file_path, str(self.file_list[self.index]))
-        self.pm = QPixmap(self.pic_url)  # 图像显示
+        self.pm = QPixmap(self.pic_url,"0", Qt.AvoidDither | Qt.ThresholdDither | Qt.ThresholdAlphaDither).scaled(int(self.scale*self.wt),int(self.scale*self.wt))
+        self.resize(self.pm.size())
+        # self.pm1 = QBitmap(self.pic_url)
+        self.setMask(self.pm.mask())
         self.lbl.setPixmap(self.pm)  # 设置Qlabel为一个Pimap图片
+
         self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)  # 设置窗口置顶以及去掉边框
         self.setAutoFillBackground(False)  # 设置窗口背景透明
         self.setAttribute(Qt.WA_TranslucentBackground, True)
@@ -135,11 +158,11 @@ class Pet(QMainWindow):
         桌面宠物的替换
         """
         print(role_name)
-        self.close()  # 关闭窗口
-        self.lbl.deleteLater()  # 清空Label
+        # self.close()  # 关闭窗口
+        # self.lbl.deleteLater()  # 清空Label
         self.role_name = role_name
-        self.wt = 300
-        self.ht = 300
+        self.pos_x = 300
+        self.pos_y = 300
         self.file_path = self.pre_path + role_name
         self.file_list = sorted(os.listdir(self.file_path))
         self.img = QImage().load(os.path.join(self.file_path, str(self.file_list[1])))  # 获取第一张图片作为托盘图标
@@ -167,13 +190,28 @@ class Pet(QMainWindow):
         if Qt.LeftButton and self.is_follow_mouse:
             self.move(event.globalPos() - self.mouse_drag_pos)
             xy = self.pos()
-            self.wt, self.ht = xy.x(), xy.y()
+            self.pos_x, self.pos_y = xy.x(), xy.y()
             event.accept()
 
     def mouseReleaseEvent(self, event):
         # 鼠标松开事件
         self.is_follow_mouse = False
         self.setCursor(QCursor(Qt.ArrowCursor))
+
+    def keyPressEvent(self, event):
+        # command & Q   ==>quit
+        if event.key() == Qt.Key_Q and event.modifiers() == Qt.ControlModifier:
+            self.quit()
+        # command & =   ==>bigger
+        if event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_Equal:  # 两键组合
+            # print('bigger')
+            self.scale += 0.01
+        # command & -   ==>smaller
+        if event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_Minus:  # 两键组合
+            # print('smaller')
+            self.scale -= 0.01
+
+
 
     def quit(self):
         # 退出程序
