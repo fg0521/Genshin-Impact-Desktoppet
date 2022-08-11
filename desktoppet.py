@@ -5,7 +5,7 @@ import time
 
 import pygame.mixer as mixer
 from PyQt5 import QtWidgets, QtGui
-from PyQt5.QtCore import QTimer, Qt, QSize, QThread
+from PyQt5.QtCore import QTimer, Qt, QSize, QThread, pyqtSignal
 from PyQt5.QtGui import QPixmap, QFont, QIcon, QImage, QCursor, QBitmap
 from PyQt5.QtWidgets import QSystemTrayIcon, QMenuBar, QAction, QMenu, qApp, QApplication,QMainWindow
 import PyQt5.sip
@@ -13,14 +13,34 @@ from config import args, dic
 
 
 class MyThread(QThread):
+    play_state = pyqtSignal(str)  # 每隔一秒发送一个信号
     def __init__(self):
-        super().__init__()
+        super(MyThread, self).__init__()
+        self.state = '语音开'
+
+    def audio_on_off(self,state):
+        if state == '语音开':
+            self.state = '语音关'
+            audio_list = os.listdir(f'./music/可莉')
+            mixer.init()
+            while True:
+                print(111)
+                random_audio = audio_list[random.randint(0, len(audio_list) - 1)]
+                mixer.music.load(f'./music/可莉/{random_audio}')
+                mixer.music.play()
+                time.sleep(random.randint(15, 20))
+
+        else:
+            self.state = '语音开'
+            if mixer.get_busy():
+                mixer.music.stop()
+            else:
+                pass
 
     # 开启线程后默认执行
     def run(self):
-        for i in range(10):
-            print("执行....%d" % (i + 1))
-            time.sleep(1)
+        self.audio_on_off(self.state)
+        self.play_state.emit(self.state)
 
 
 class Pet(QMainWindow):
@@ -31,6 +51,8 @@ class Pet(QMainWindow):
         self.file_path = self.pre_path + self.role_name
         self.file_list = sorted(os.listdir(self.file_path))  # 对文件夹里面的所有图片进行排序
         self.img = QImage().load(os.path.join(self.file_path, str(self.file_list[1])))  # 获取第一张图片作为托盘图标
+
+        # self.mythread.start()
         self.scale = 1
         self.wt = 300
         self.ht = 300
@@ -125,7 +147,7 @@ class Pet(QMainWindow):
         self.pets.addAction(q)
 
         self.audio = QAction('语音开', self)
-        self.audio.triggered.connect(self.audio_switch)
+        self.audio.triggered.connect(self.start_mythread)
         self.menu.addAction(self.audio)
 
         self.bgmusics = self.menu.addMenu('背景音乐')
@@ -234,19 +256,33 @@ class Pet(QMainWindow):
     def showwin(self):
         self.setWindowOpacity(1)
 
-    def audio_switch(self):
-        self.audio_player = not self.audio_player
-        self.audio.setText('语音关') if self.audio_player else self.audio.setText('语音开')
-        while self.audio_player:
-            audio_list = os.listdir(f'./music/{self.role_name}')
-            random_audio = audio_list[random.randint(0, len(audio_list) - 1)]
-            mixer.init()
-            mixer.music.load(f'./music/{self.role_name}/{random_audio}')
-            if not mixer.music.get_busy():
-                mixer.music.play()
-            time.sleep(random.randint(15, 100))
+    def audio_switch(self,s):
+        self.audio.setText(s)
+        # self.audio_player = not self.audio_player
+
+        # self.audio.setText('语音关') if self.audio_player else self.audio.setText('语音开')
+
+        # while self.audio_player:
+        #     audio_list = os.listdir(f'./music/{self.role_name}')
+        #     random_audio = audio_list[random.randint(0, len(audio_list) - 1)]
+        #     mixer.init()
+        #     mixer.music.load(f'./music/{self.role_name}/{random_audio}')
+        #     if not mixer.music.get_busy():
+        #         mixer.music.play()
+        #     time.sleep(random.randint(15, 100))
+        # else:
+        #     mixer.music.stop()
+
+    def start_mythread(self):
+        print(self.audio_player)
+        if not self.audio_player:
+            self.mythread = MyThread()
+            self.mythread.play_state.connect(self.audio_switch)
+            self.mythread.start()
+            self.audio_player = not self.audio_player
         else:
-            mixer.music.stop()
+            self.mythread.quit()
+            self.audio_player = not self.audio_player
 
     def bg_music(self, area):
         if area == '关闭':
