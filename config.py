@@ -1,7 +1,10 @@
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--path', default='yuanshen/')
+parser.add_argument('--music',default='蒙徳')
+parser.add_argument('--audio',default=False)
+parser.add_argument('--img_path', default='yuanshen/')
+parser.add_argument('--music_path', default='music/')
 parser.add_argument('--kl', default='可莉')
 parser.add_argument('--bbl', default='芭芭拉')
 parser.add_argument('--kq', default='刻晴')
