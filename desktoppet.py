@@ -51,8 +51,7 @@ class Pet(QMainWindow):
         self.file_list = sorted(os.listdir(self.file_path))  # 对文件夹里面的所有图片进行排序
         self.img = QImage().load(os.path.join(self.file_path, str(self.file_list[1])))  # 获取第一张图片作为托盘图标
         self.mythread = MyThread()
-        if audio_player:
-            self.mythread.start()
+
         self.scale = 1
         self.wt = 300
         self.ht = 300
@@ -68,6 +67,10 @@ class Pet(QMainWindow):
             mixer.music.load(os.path.join(args.music_path,args.music,'background.mp3'))
             mixer.music.play(-1)
             self.md_music.setText(f'{args.music}~')
+        if audio_player:
+            self.role_music.setText('人物语音~')
+            self.mythread.start()
+
         self.is_follow_mouse = False  # 初始化鼠标没有移动
         self.mouse_drag_pos = self.pos()
 
@@ -125,7 +128,6 @@ class Pet(QMainWindow):
         """
         self.bar = QMenuBar(self)
         self.menu = self.bar.addMenu('菜单')
-
         self.pets = self.menu.addMenu('人物')
 
         # self.pets.addAction(QAction(r, self,triggered=lambda: self.reshow(r)))
@@ -151,6 +153,15 @@ class Pet(QMainWindow):
         fxe = QAction('菲谢尔', self)
         fxe.triggered.connect(lambda: self.reshow('菲谢尔'))
         self.pets.addAction(fxe)
+        abd = QAction('阿贝多', self)
+        abd.triggered.connect(lambda: self.reshow('阿贝多'))
+        self.pets.addAction(abd)
+        bnt = QAction('班尼特', self)
+        bnt.triggered.connect(lambda: self.reshow('班尼特'))
+        self.pets.addAction(bnt)
+        yl = QAction('优菈', self)
+        yl.triggered.connect(lambda: self.reshow('优菈'))
+        self.pets.addAction(yl)
 
         kq = QAction('刻晴', self)
         kq.triggered.connect(lambda: self.reshow('刻晴'))
@@ -170,13 +181,14 @@ class Pet(QMainWindow):
         xq = QAction('行秋', self)
         xq.triggered.connect(lambda: self.reshow('行秋'))
         self.pets.addAction(xq)
+        ddly = QAction('达达利亚', self)
+        ddly.triggered.connect(lambda: self.reshow('达达利亚'))
+        self.pets.addAction(ddly)
+
 
         wy = QAction('万叶', self)
         wy.triggered.connect(lambda: self.reshow('万叶'))
         self.pets.addAction(wy)
-        yl = QAction('优菈', self)
-        yl.triggered.connect(lambda: self.reshow('优菈'))
-        self.pets.addAction(yl)
         bcsz = QAction('八重神子', self)
         bcsz.triggered.connect(lambda: self.reshow('八重神子'))
         self.pets.addAction(bcsz)
@@ -195,6 +207,16 @@ class Pet(QMainWindow):
         hlyd = QAction('荒泷一斗', self)
         hlyd.triggered.connect(lambda: self.reshow('荒泷一斗'))
         self.pets.addAction(hlyd)
+        ldjj = QAction('雷电将军', self)
+        ldjj.triggered.connect(lambda: self.reshow('雷电将军'))
+        self.pets.addAction(ldjj)
+        sllr = QAction('神里绫人', self)
+        sllr.triggered.connect(lambda: self.reshow('神里绫人'))
+        self.pets.addAction(sllr)
+        yl1 = QAction('夜兰', self)
+        yl1.triggered.connect(lambda: self.reshow('夜兰'))
+        self.pets.addAction(yl1)
+
 
 
         self.bgmusics = self.menu.addMenu('音乐')
