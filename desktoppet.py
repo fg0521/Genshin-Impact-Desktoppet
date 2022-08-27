@@ -301,7 +301,7 @@ class Pet(QMainWindow):
         # command & Q   ==>quit
         if event.key() == Qt.Key_Q and event.modifiers() == Qt.ControlModifier:
             self.quit()
-        # command & =   ==>bigger
+        # command & +   ==>bigger
         if event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_Equal:  # 两键组合
             # print('bigger')
             self.scale += 0.01
