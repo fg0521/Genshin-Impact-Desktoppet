@@ -11,6 +11,9 @@ import PyQt5.sip
 from config import args
 
 # global audio_player,role_name
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(BASE_DIR, 'png'))
+sys.path.append(os.path.join(BASE_DIR, 'music'))
 audio_player = args.audio
 role_name = args.role
 mixer.init()
@@ -26,15 +29,15 @@ class MyThread(QThread):
         while audio_player:
             # print(audio_player)
             # print(role_name)
-            audio_list = os.listdir(os.path.join(args.music_path, role_name))
+            audio_list = os.listdir(os.path.join(BASE_DIR, args.music_path, role_name))
             random_audio = audio_list[random.randint(0, len(audio_list) - 1)]
-            random_music = os.path.join(args.music_path, role_name, random_audio)
+            random_music = os.path.join(BASE_DIR, args.music_path, role_name, random_audio)
             audio = mixer.Sound(random_music)
             audio.set_volume(0.9)
             audio.play()
             time.sleep(random.randint(15, 20))
         else:
-            print(audio_player)
+            # print(audio_player)
             if mixer.get_busy():
                 audio = mixer.Sound(random_music)
                 audio.stop()
@@ -47,9 +50,9 @@ class Pet(QMainWindow):
         super(Pet, self).__init__()
         # role_name = args.kl  # 文件夹名称
         self.pre_path = args.img_path
-        self.file_path = os.path.join(self.pre_path, role_name)
+        self.file_path = os.path.join(BASE_DIR, self.pre_path, role_name)
         self.file_list = sorted(os.listdir(self.file_path))  # 对文件夹里面的所有图片进行排序
-        self.img = QImage().load(os.path.join(self.file_path, str(self.file_list[1])))  # 获取第一张图片作为托盘图标
+        self.img = QImage().load(os.path.join(BASE_DIR, self.file_path, str(self.file_list[1])))  # 获取第一张图片作为托盘图标
         self.mythread = MyThread()
 
         self.scale = 1
@@ -64,7 +67,7 @@ class Pet(QMainWindow):
         self.timer.start(50)
         self.tray()
         if args.music:
-            mixer.music.load(os.path.join(args.music_path,args.music,'background.mp3'))
+            mixer.music.load(os.path.join(BASE_DIR, args.music_path,args.music,'background.mp3'))
             mixer.music.play(-1)
             self.md_music.setText(f'{args.music}~')
         if audio_player:
@@ -82,7 +85,7 @@ class Pet(QMainWindow):
             self.index += 1
         else:
             self.index = 1
-        self.pic_url = os.path.join(self.file_path, str(self.file_list[self.index]))
+        self.pic_url = os.path.join(BASE_DIR, self.file_path, str(self.file_list[self.index]))
 
         self.pm = QPixmap(self.pic_url, "0", Qt.AvoidDither | Qt.ThresholdDither | Qt.ThresholdAlphaDither).scaled(
             int(self.scale * self.wt), int(self.scale * self.wt))
@@ -106,7 +109,7 @@ class Pet(QMainWindow):
         self.setCentralWidget(self.lbl)
 
         self.index = 1
-        self.pic_url = os.path.join(self.file_path, str(self.file_list[self.index]))
+        self.pic_url = os.path.join(BASE_DIR, self.file_path, str(self.file_list[self.index]))
         self.pm = QPixmap(self.pic_url, "0", Qt.AvoidDither | Qt.ThresholdDither | Qt.ThresholdAlphaDither).scaled(
             int(self.scale * self.wt), int(self.scale * self.wt))
         self.resize(self.pm.size())
@@ -118,7 +121,7 @@ class Pet(QMainWindow):
         self.setAutoFillBackground(False)  # 设置窗口背景透明
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.show()  # 显示窗口
-        self.tp.setIcon(QIcon(os.path.join(self.file_path, str(self.file_list[1]))))  # 系统托盘图标
+        self.tp.setIcon(QIcon(os.path.join(BASE_DIR, self.file_path, str(self.file_list[1]))))  # 系统托盘图标
         self.timer = QTimer()
         self.timer.timeout.connect(self.act)
 
@@ -251,16 +254,16 @@ class Pet(QMainWindow):
         """
         桌面宠物的替换
         """
-        print(name)
+        # print(name)
         # self.close()  # 关闭窗口
         # self.lbl.deleteLater()  # 清空Label
         global role_name
         role_name = name
         self.pos_x = 300
         self.pos_y = 300
-        self.file_path = os.path.join(self.pre_path, role_name)
+        self.file_path = os.path.join(BASE_DIR, self.pre_path, role_name)
         self.file_list = sorted(os.listdir(self.file_path))
-        self.img = QImage().load(os.path.join(self.file_path, str(self.file_list[1])))  # 获取第一张图片作为托盘图标
+        self.img = QImage().load(os.path.join(BASE_DIR, self.file_path, str(self.file_list[1])))  # 获取第一张图片作为托盘图标
 
         # scale = 1.2  # 每次放到20%
         # img = QImage(self.pic_url)  # 创建图片实例
@@ -270,7 +273,7 @@ class Pet(QMainWindow):
         # self.pm = QPixmap(pixImg)  # 图像显示
         self.init_window()
         self.tp.show()
-        print(name+'~')
+        # print(name+'~')
         if name == '胡桃':
             self.timer.start(70)
         else:
@@ -372,7 +375,7 @@ class Pet(QMainWindow):
 
             if mixer.music.get_busy():
                 mixer.music.stop()
-            mixer.music.load(os.path.join(args.music_path,area,'background.mp3'))
+            mixer.music.load(os.path.join(BASE_DIR, args.music_path,area,'background.mp3'))
             mixer.music.play(-1)
 
 
@@ -380,5 +383,4 @@ if __name__ == '__main__':
     # 创建程序和对象
     app = QApplication(sys.argv)
     pet = Pet()
-
     sys.exit(app.exec_())
