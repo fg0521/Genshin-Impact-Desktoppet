@@ -9,9 +9,7 @@ class Main(QMainWindow):
         super().__init__()
         self.setWindowTitle('test')
 
-# app = QApplication([])
-# win = Main()
-# win.show()
-# app.exec_()
-#
-print()
+app = QApplication([])
+win = Main()
+win.show()
+app.exec_()
