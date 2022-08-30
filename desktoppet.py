@@ -8,15 +8,27 @@ from PyQt5.QtCore import QTimer, Qt, QThread
 from PyQt5.QtGui import QPixmap, QIcon, QImage, QCursor
 from PyQt5.QtWidgets import QSystemTrayIcon, QMenuBar, QAction, QMenu, qApp, QApplication, QMainWindow
 import PyQt5.sip
-from config import args
-
+# from config import args,frame
+import yaml
 # global audio_player,role_name
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(BASE_DIR, 'png'))
 sys.path.append(os.path.join(BASE_DIR, 'music'))
-audio_player = args.audio
-role_name = args.role
+sys.path.append(os.path.join(BASE_DIR, 'config.yaml'))
+
+
+with open(os.path.join(BASE_DIR,'config.yaml')) as f:
+    config = yaml.safe_load(f)
+
+
+audio_player = config['audio']
+role_name = config['role']
+music_path = config['music_path']
+img_path = config['img_path']
+frame = config['frame']
+bg_music = config['bg_music']
 mixer.init()
+
 
 
 class MyThread(QThread):
@@ -29,9 +41,9 @@ class MyThread(QThread):
         while audio_player:
             # print(audio_player)
             # print(role_name)
-            audio_list = os.listdir(os.path.join(BASE_DIR, args.music_path, role_name))
+            audio_list = os.listdir(os.path.join(BASE_DIR, music_path, role_name))
             random_audio = audio_list[random.randint(0, len(audio_list) - 1)]
-            random_music = os.path.join(BASE_DIR, args.music_path, role_name, random_audio)
+            random_music = os.path.join(BASE_DIR, music_path, role_name, random_audio)
             audio = mixer.Sound(random_music)
             audio.set_volume(0.9)
             audio.play()
@@ -49,7 +61,7 @@ class Pet(QMainWindow):
     def __init__(self):
         super(Pet, self).__init__()
         # role_name = args.kl  # 文件夹名称
-        self.pre_path = args.img_path
+        self.pre_path = img_path
         self.file_path = os.path.join(BASE_DIR, self.pre_path, role_name)
         self.file_list = sorted(os.listdir(self.file_path))  # 对文件夹里面的所有图片进行排序
         self.img = QImage().load(os.path.join(BASE_DIR, self.file_path, str(self.file_list[1])))  # 获取第一张图片作为托盘图标
@@ -64,12 +76,12 @@ class Pet(QMainWindow):
         self.tp = QSystemTrayIcon(self)  # 初始化系统托盘
         self.tp.setToolTip('原来你也玩原神')
         self.init_window()
-        self.timer.start(50)
+        self.timer.start(frame[role_name])
         self.tray()
-        if args.music:
-            mixer.music.load(os.path.join(BASE_DIR, args.music_path,args.music,'background.mp3'))
+        if bg_music:
+            mixer.music.load(os.path.join(BASE_DIR, music_path,bg_music,'background.mp3'))
             mixer.music.play(-1)
-            self.md_music.setText(f'{args.music}~')
+            self.md_music.setText(f'{bg_music}~')
         if audio_player:
             self.role_music.setText('人物语音~')
             self.mythread.start()
@@ -223,8 +235,8 @@ class Pet(QMainWindow):
 
 
         self.bgmusics = self.menu.addMenu('音乐')
-        self.md_music = QAction('蒙徳', self)
-        self.md_music.triggered.connect(lambda: self.bg_music('蒙徳'))
+        self.md_music = QAction('蒙德', self)
+        self.md_music.triggered.connect(lambda: self.bg_music('蒙德'))
         self.bgmusics.addAction(self.md_music)
         self.ly_music = QAction('璃月', self)
         self.ly_music.triggered.connect(lambda: self.bg_music('璃月'))
@@ -259,6 +271,7 @@ class Pet(QMainWindow):
         # self.lbl.deleteLater()  # 清空Label
         global role_name
         role_name = name
+        config['role'] = name
         self.pos_x = 300
         self.pos_y = 300
         self.file_path = os.path.join(BASE_DIR, self.pre_path, role_name)
@@ -274,10 +287,7 @@ class Pet(QMainWindow):
         self.init_window()
         self.tp.show()
         # print(name+'~')
-        if name == '胡桃':
-            self.timer.start(70)
-        else:
-            self.timer.start(50)
+        self.timer.start(frame[role_name])
 
     def mousePressEvent(self, event):
         # 鼠标左键事件
@@ -315,6 +325,9 @@ class Pet(QMainWindow):
 
     def quit(self):
         # 退出程序
+        print(f'del:{config}')
+        with open(os.path.join(BASE_DIR, 'config.yaml'), 'w') as f:
+            yaml.dump(config, f,default_flow_style=False,encoding='utf-8',allow_unicode=True)
         self.close()
         sys.exit()
 
@@ -326,7 +339,8 @@ class Pet(QMainWindow):
         # 使用exec_()方法显示菜单。从鼠标右键事件对象中获得当前坐标。mapToGlobal()方法把当前组件的相对坐标转换为窗口（window）的绝对坐标。
         action = menu.exec_(self.mapToGlobal(event.pos()))
         if action == quitAction:
-            qApp.quit()
+            # qApp.quit()
+            self.quit()
         if action == hide:
             # 通过设置透明度方式隐藏宠物
             self.setWindowOpacity(0)
@@ -347,36 +361,40 @@ class Pet(QMainWindow):
                 self.music_off.setText('关闭所有～')
             self.mythread.exit()
         audio_player = not audio_player
+        config['audio'] = not config['audio']
 
     def bg_music(self, area):
         if area == '关闭所有':
-            self.music_off.setText('关闭所有～')
+            self.music_off.setText('关闭所有～') if self.music_off.text() == '关闭所有' else self.music_off.setText('关闭所有')
             self.role_music.setText('人物语音')
-            self.md_music.setText('蒙徳')
+            self.md_music.setText('蒙德')
             self.ly_music.setText('璃月')
             self.dq_music.setText('稻妻')
-            mixer.music.stop()
+
         else:
-            if area == '蒙徳':
-                self.md_music.setText('蒙徳～')
+            if area == '蒙德':
+                self.md_music.setText('蒙德～') if self.md_music.text() == '蒙德' else self.md_music.setText('蒙德')
                 self.ly_music.setText('璃月')
                 self.dq_music.setText('稻妻')
                 self.music_off.setText('关闭所有')
             elif area == '璃月':
-                self.md_music.setText('蒙徳')
-                self.ly_music.setText('璃月～')
+                self.md_music.setText('蒙德')
+                self.ly_music.setText('璃月～') if self.ly_music.text() == '璃月' else self.ly_music.setText('璃月')
                 self.dq_music.setText('稻妻')
                 self.music_off.setText('关闭所有')
             elif area == '稻妻':
-                self.md_music.setText('蒙徳')
+                self.md_music.setText('蒙德')
                 self.ly_music.setText('璃月')
-                self.dq_music.setText('稻妻～')
+                self.dq_music.setText('稻妻～') if self.dq_music.text() == '稻妻' else self.dq_music.setText('稻妻')
                 self.music_off.setText('关闭所有')
-
-            if mixer.music.get_busy():
-                mixer.music.stop()
-            mixer.music.load(os.path.join(BASE_DIR, args.music_path,area,'background.mp3'))
+        if mixer.music.get_busy():
+            mixer.music.stop()
+        else:
+            mixer.music.load(os.path.join(BASE_DIR, music_path,area,'background.mp3'))
             mixer.music.play(-1)
+        config['bg_music'] = area
+
+
 
 
 if __name__ == '__main__':
