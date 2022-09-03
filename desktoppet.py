@@ -1,68 +1,30 @@
 import os
 import random
 import sys
-import time
 import pygame.mixer as mixer
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import QTimer, Qt, QThread
+from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QPixmap, QIcon, QImage, QCursor
-from PyQt5.QtWidgets import QSystemTrayIcon, QMenuBar, QAction, QMenu, qApp, QApplication, QMainWindow
+from PyQt5.QtWidgets import QSystemTrayIcon, QMenuBar, QAction, QMenu, QApplication, QMainWindow
 import PyQt5.sip
 import datetime
 import yaml
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(BASE_DIR, 'png'))
 sys.path.append(os.path.join(BASE_DIR, 'music'))
 sys.path.append(os.path.join(BASE_DIR, 'config.yaml'))
-
-
-with open(os.path.join(BASE_DIR,'config.yaml')) as f:
+with open(os.path.join(BASE_DIR, 'config.yaml')) as f:
     config = yaml.safe_load(f)
-
-
-audio_player = config['audio']
-role_name = config['role']
-music_path = config['music_path']
-img_path = config['img_path']
-frame_scale = config['frame_scale']
-bg_music = config['bg_music']
 mixer.init()
 
 
-
-class MyThread(QThread):
-
-    def __init__(self):
-        super(MyThread, self).__init__()
-
-    def run(self):
-        global random_music
-        while audio_player:
-            # print(audio_player)
-            # print(role_name)
-            audio_list = os.listdir(os.path.join(BASE_DIR, music_path, role_name))
-            random_audio = audio_list[random.randint(0, len(audio_list) - 1)]
-            random_music = os.path.join(BASE_DIR, music_path, role_name, random_audio)
-            audio = mixer.Sound(random_music)
-            audio.set_volume(0.5)
-            audio.play()
-            time.sleep(random.randint(25, 60))
-        else:
-            # print(audio_player)
-            # if mixer.get_busy():
-            #     audio = mixer.Sound(random_music)
-            audio.stop()
-
-        # self.play_state.emit(self.state)
-
-
-
 def greeting(time):
-    if time <= 10 and time >= 4:
+    if 10 >= time >= 4:
         return '早上好.mp3'
-    elif time <= 14 and time >= 11:
+    elif 14 >= time >= 11:
         return '中午好.mp3'
-    elif time <= 24 and time > 17:
+    elif 24 >= time > 17:
         return '晚上好.mp3'
     else:
         return False
@@ -71,34 +33,36 @@ def greeting(time):
 class Pet(QMainWindow):
     def __init__(self):
         super(Pet, self).__init__()
-        # role_name = args.kl  # 文件夹名称
-        self.pre_path = img_path
-        self.file_path = os.path.join(BASE_DIR, self.pre_path, role_name)
+        self.audio_player = config['audio']
+        self.role_name = config['role']
+        self.music_path = config['music_path']
+        self.img_path = config['img_path']
+        self.bg_music = config['bg_music']
+        desktop = QApplication.desktop()
+        screenRect = desktop.screenGeometry()
+        self.screenheight,self.screenwidth = screenRect.height(),screenRect.width()
+
+        self.file_path = os.path.join(BASE_DIR, self.img_path, self.role_name)
         self.file_list = sorted(os.listdir(self.file_path))  # 对文件夹里面的所有图片进行排序
         self.img = QImage().load(os.path.join(BASE_DIR, self.file_path, str(self.file_list[1])))  # 获取第一张图片作为托盘图标
-        # self.mythread = MyThread()
-        mixer.music.load(os.path.join(BASE_DIR, music_path, bg_music, 'background.mp3'))
-        mixer.music.play(-1)
-        self.scale = frame_scale[role_name][1]
+        if self.bg_music:
+            mixer.music.load(os.path.join(BASE_DIR, self.music_path, self.bg_music, 'background.mp3'))
+            mixer.music.play(-1)
+        self.scale = config['frame_scale'][self.role_name][1]
         self.wt = 300
         self.ht = 300
-        self.pos_x = 300
-        self.pos_y = 300
-        self.now_time =datetime.datetime.now().hour
-        self.talk_path = [os.path.join(BASE_DIR, music_path, role_name,i) for i in os.listdir(os.path.join(BASE_DIR, music_path, role_name)) if i.startswith('闲聊')]
-
+        self.pos_x = random.randint(0, self.screenwidth)
+        self.pos_y = random.randint(0, self.screenheight)
+        self.now_time = datetime.datetime.now().hour
+        self.talk_path = [os.path.join(BASE_DIR, self.music_path, self.role_name, i) for i in
+                          os.listdir(os.path.join(BASE_DIR, self.music_path, self.role_name)) if i.startswith('闲聊')]
+        self.know_path = [os.path.join(BASE_DIR, self.music_path, self.role_name, i) for i in
+                          os.listdir(os.path.join(BASE_DIR, self.music_path, self.role_name)) if i.startswith('想要了解')]
         self.tp = QSystemTrayIcon(self)  # 初始化系统托盘
         self.tp.setToolTip('原来你也玩原神')
         self.tray()
         self.init_window()
-        self.timer.start(frame_scale[role_name][0])
-
-        # if bg_music:
-        #     mixer.music.load(os.path.join(BASE_DIR, music_path,bg_music,'background.mp3'))
-        #     mixer.music.play(-1)
-        #     self.md_music.setText(f'{bg_music}~')
-
-
+        self.timer.start(config['frame_scale'][self.role_name][0])
         self.is_follow_mouse = False  # 初始化鼠标没有移动
         self.mouse_drag_pos = self.pos()
 
@@ -113,25 +77,17 @@ class Pet(QMainWindow):
         self.pic_url = os.path.join(BASE_DIR, self.file_path, str(self.file_list[self.index]))
         self.pm = QPixmap(self.pic_url, "0", Qt.AvoidDither | Qt.ThresholdDither | Qt.ThresholdAlphaDither).scaled(
             int(self.scale * self.wt), int(self.scale * self.wt))
-        # print(self.pm.size())
         self.resize(self.pm.size())
-        # self.pm1 = QBitmap(self.pic_url)
         self.setMask(self.pm.mask())
-        # self.lbl.setPixmap(QPixmap(""))
-
         self.lbl.setPixmap(self.pm)
-        # self.lbl.repaint()
 
     def init_window(self):
         """
         初始化窗口
         """
-        # self.setToolTip(dic[role_name])
         self.setGeometry(0, 400, self.pos_x, self.pos_y)  # 设置窗口和位置
 
-        # 初始化一个QLabel对象
-        self.lbl = QtWidgets.QLabel(self)
-        # self.lbl.setStyleSheet("QLabel{background-color :black;}")
+        self.lbl = QtWidgets.QLabel(self)# 初始化一个QLabel对象
         self.lbl.setScaledContents(True)
         self.setCentralWidget(self.lbl)
 
@@ -140,7 +96,6 @@ class Pet(QMainWindow):
         self.pm = QPixmap(self.pic_url, "0", Qt.AvoidDither | Qt.ThresholdDither | Qt.ThresholdAlphaDither).scaled(
             int(self.scale * self.wt), int(self.scale * self.wt))
         self.resize(self.pm.size())
-        # self.pm1 = QBitmap(self.pic_url)
         self.setMask(self.pm.mask())
         self.lbl.setPixmap(self.pm)  # 设置Qlabel为一个Pimap图片
 
@@ -151,12 +106,11 @@ class Pet(QMainWindow):
         self.tp.setIcon(QIcon(os.path.join(BASE_DIR, self.file_path, str(self.file_list[1]))))  # 系统托盘图标
         self.timer = QTimer()
         self.timer.timeout.connect(self.act)
-        if audio_player:
+        if self.audio_player:
             self.role_music.setText('人物语音~')
-            print(11)
             greet = greeting(self.now_time)
             if greet:
-                audio = mixer.Sound(os.path.join(BASE_DIR, music_path, role_name,greet))
+                audio = mixer.Sound(os.path.join(BASE_DIR, self.music_path, self.role_name, greet))
                 audio.set_volume(0.5)
                 audio.play()
 
@@ -167,9 +121,7 @@ class Pet(QMainWindow):
         self.bar = QMenuBar(self)
         self.menu = self.bar.addMenu('菜单')
         self.pets = self.menu.addMenu('人物')
-
         # self.pets.addAction(QAction(r, self,triggered=lambda: self.reshow(r)))
-
         bbl = QAction('芭芭拉', self)
         bbl.triggered.connect(lambda: self.reshow('芭芭拉'))
         q = QAction('琴', self)
@@ -210,6 +162,9 @@ class Pet(QMainWindow):
         ht = QAction('胡桃', self)
         ht.triggered.connect(lambda: self.reshow('胡桃'))
         self.pets.addAction(ht)
+        qq = QAction('七七', self)
+        qq.triggered.connect(lambda: self.reshow('七七'))
+        self.pets.addAction(qq)
         zl = QAction('钟离', self)
         zl.triggered.connect(lambda: self.reshow('钟离'))
         self.pets.addAction(zl)
@@ -223,9 +178,8 @@ class Pet(QMainWindow):
         ddly.triggered.connect(lambda: self.reshow('达达利亚'))
         self.pets.addAction(ddly)
 
-
-        wy = QAction('万叶', self)
-        wy.triggered.connect(lambda: self.reshow('万叶'))
+        wy = QAction('枫原万叶', self)
+        wy.triggered.connect(lambda: self.reshow('枫原万叶'))
         self.pets.addAction(wy)
         bcsz = QAction('八重神子', self)
         bcsz.triggered.connect(lambda: self.reshow('八重神子'))
@@ -255,22 +209,20 @@ class Pet(QMainWindow):
         yl1.triggered.connect(lambda: self.reshow('夜兰'))
         self.pets.addAction(yl1)
 
-
-
         self.bgmusics = self.menu.addMenu('音乐')
-        self.md_music = QAction('蒙德~', self) if bg_music == '蒙德' else QAction('蒙德', self)
+        self.md_music = QAction('蒙德~', self) if self.bg_music == '蒙德' else QAction('蒙德', self)
         self.md_music.triggered.connect(lambda: self.bg_music('蒙德'))
         self.bgmusics.addAction(self.md_music)
 
-        self.ly_music = QAction('璃月~', self) if bg_music == '璃月' else QAction('璃月', self)
+        self.ly_music = QAction('璃月~', self) if self.bg_music == '璃月' else QAction('璃月', self)
         self.ly_music.triggered.connect(lambda: self.bg_music('璃月'))
         self.bgmusics.addAction(self.ly_music)
 
-        self.dq_music = QAction('稻妻~', self) if bg_music == '稻妻' else QAction('稻妻', self)
+        self.dq_music = QAction('稻妻~', self) if self.bg_music == '稻妻' else QAction('稻妻', self)
         self.dq_music.triggered.connect(lambda: self.bg_music('稻妻'))
         self.bgmusics.addAction(self.dq_music)
 
-        self.role_music = QAction('人物语音~', self) if audio_player else  QAction('人物语音', self)
+        self.role_music = QAction('人物语音~', self) if self.audio_player else QAction('人物语音', self)
         self.role_music.triggered.connect(self.role_audio)
         self.bgmusics.addAction(self.role_music)
         self.music_off = QAction('关闭所有', self)
@@ -292,28 +244,23 @@ class Pet(QMainWindow):
         """
         桌面宠物的替换
         """
-        # print(name)
-        # self.close()  # 关闭窗口
-        # self.lbl.deleteLater()  # 清空Label
-        global role_name
-        role_name = name
+        self.talk_path = [os.path.join(BASE_DIR, self.music_path, name, i) for i in
+                          os.listdir(os.path.join(BASE_DIR, self.music_path, name)) if i.startswith('闲聊')]
+        self.know_path = [os.path.join(BASE_DIR, self.music_path, name, i) for i in
+                          os.listdir(os.path.join(BASE_DIR, self.music_path, name)) if i.startswith('想要了解')]
+        if mixer.get_busy():
+            mixer.stop()
+        self.role_name = name
         config['role'] = name
-        self.scale = frame_scale[role_name][1]
-        self.pos_x = 300
-        self.pos_y = 300
-        self.file_path = os.path.join(BASE_DIR, self.pre_path, role_name)
+        self.scale = config['frame_scale'][self.role_name][1]
+        self.pos_x = random.randint(0, self.screenwidth)
+        self.pos_y = random.randint(0, self.screenheight)
+        self.file_path = os.path.join(BASE_DIR, self.img_path, self.role_name)
         self.file_list = sorted(os.listdir(self.file_path))
         self.img = QImage().load(os.path.join(BASE_DIR, self.file_path, str(self.file_list[1])))  # 获取第一张图片作为托盘图标
-        # scale = 1.2  # 每次放到20%
-        # img = QImage(self.pic_url)  # 创建图片实例
-        # size = QSize(self.wt,self.ht)
-        # pixImg = QPixmap.fromImage(
-        #     img.scaled(size, Qt.IgnoreAspectRatio))  # 修改图片实例大小并从QImage实例中生成QPixmap实例以备放入QLabel控件中
-        # self.pm = QPixmap(pixImg)  # 图像显示
         self.init_window()
         self.tp.show()
-        # print(name+'~')
-        self.timer.start(frame_scale[role_name][0])
+        self.timer.start(config['frame_scale'][self.role_name][0])
 
     def mousePressEvent(self, event):
         # 鼠标左键事件
@@ -336,31 +283,22 @@ class Pet(QMainWindow):
         self.is_follow_mouse = False
         self.setCursor(QCursor(Qt.ArrowCursor))
 
-
-
     def keyPressEvent(self, event):
         # command & Q   ==>quit
         if event.key() == Qt.Key_Q and event.modifiers() == Qt.ControlModifier:
             self.quit()
         # command & +   ==>bigger
         if event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_Equal:  # 两键组合
-            # print('bigger')
             self.scale += 0.01
-            frame_scale[role_name][1] = self.scale
-
         # command & -   ==>smaller
         if event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_Minus:  # 两键组合
-            # print('smaller')
             self.scale -= 0.01
-            frame_scale[role_name][1] = self.scale
-
-
+        config['frame_scale'][self.role_name][1] = self.scale
 
     def quit(self):
         # 退出程序
-        # print(f'del:{config}')
         with open(os.path.join(BASE_DIR, 'config.yaml'), 'w') as f:
-            yaml.dump(config, f,default_flow_style=False,encoding='utf-8',allow_unicode=True)
+            yaml.dump(config, f, default_flow_style=False, encoding='utf-8', allow_unicode=True)
         self.close()
         sys.exit()
 
@@ -377,35 +315,30 @@ class Pet(QMainWindow):
             # qApp.quit()
             # mixer.Sound(os.path.join(BASE_DIR, music_path, role_name,'晚安.mp3')).play()
             self.quit()
-
-
-
         elif action == hide:
             # 通过设置透明度方式隐藏宠物
             self.setWindowOpacity(0)
-        elif action == talking and audio_player and not mixer.get_busy():
+        elif action == talking and self.audio_player and not mixer.get_busy():
             mixer.Sound(self.talk_path[random.randint(0, len(self.talk_path) - 1)]).play()
-        elif action == konwing and audio_player and not mixer.get_busy():
-            mixer.Sound(self.konw_path[random.randint(0, len(self.know_path) - 1)]).play()
-
-
+        elif action == konwing and self.audio_player and not mixer.get_busy():
+            mixer.Sound(self.know_path[random.randint(0, len(self.know_path) - 1)]).play()
 
     def showwin(self):
         self.setWindowOpacity(1)
 
     def role_audio(self):
-        global audio_player
-        if not audio_player:
+        if not self.audio_player:
             self.role_music.setText('人物语音～')
             self.music_off.setText('关闭所有')
-
         else:
             self.role_music.setText('人物语音')
             self.music_off.setText('关闭所有～')
             if mixer.get_busy():
                 mixer.stop()
-        audio_player = not audio_player
-        config['audio'] = not config['audio']
+            if mixer.music.get_busy():
+                mixer.music.stop()
+        self.audio_player = not self.audio_player
+        config['audio'] = self.audio_player
 
     def bg_music(self, area):
         if area == '关闭所有':
@@ -414,10 +347,11 @@ class Pet(QMainWindow):
             self.md_music.setText('蒙德')
             self.ly_music.setText('璃月')
             self.dq_music.setText('稻妻')
+            config['bg_music'], config['audio'] = False, False
             if mixer.get_busy():
                 mixer.stop()
             if mixer.music.get_busy():
-               mixer.music.stop()
+                mixer.music.stop()
         else:
             if area == '蒙德':
                 self.md_music.setText('蒙德～') if self.md_music.text() == '蒙德' else self.md_music.setText('蒙德')
@@ -434,13 +368,9 @@ class Pet(QMainWindow):
                 self.ly_music.setText('璃月')
                 self.dq_music.setText('稻妻～') if self.dq_music.text() == '稻妻' else self.dq_music.setText('稻妻')
                 self.music_off.setText('关闭所有')
-            config['bg_music'] = area
-            mixer.music.load(os.path.join(BASE_DIR, music_path,area,'background.mp3'))
+            mixer.music.load(os.path.join(BASE_DIR, self.music_path, area, 'background.mp3'))
             mixer.music.play(-1)
-
-
-
-
+            config['bg_music'] = area
 
 
 if __name__ == '__main__':
