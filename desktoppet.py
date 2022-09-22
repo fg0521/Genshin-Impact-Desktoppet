@@ -14,7 +14,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(BASE_DIR, 'png'))
 sys.path.append(os.path.join(BASE_DIR, 'music'))
 sys.path.append(os.path.join(BASE_DIR, 'config.yaml'))
-with open(os.path.join(BASE_DIR, 'config.yaml')) as f:
+with open(os.path.join(BASE_DIR, 'config.yaml'), 'r', encoding='utf-8') as f:
     config = yaml.safe_load(f)
 mixer.init()
 
@@ -40,7 +40,7 @@ class Pet(QMainWindow):
         self.bg_music = config['bg_music']
         desktop = QApplication.desktop()
         screenRect = desktop.screenGeometry()
-        self.screenheight,self.screenwidth = screenRect.height(),screenRect.width()
+        self.screenheight, self.screenwidth = screenRect.height(), screenRect.width()
 
         self.file_path = os.path.join(BASE_DIR, self.img_path, self.role_name)
         self.file_list = sorted(os.listdir(self.file_path))  # 对文件夹里面的所有图片进行排序
@@ -87,7 +87,7 @@ class Pet(QMainWindow):
         """
         self.setGeometry(0, 400, self.pos_x, self.pos_y)  # 设置窗口和位置
 
-        self.lbl = QtWidgets.QLabel(self)# 初始化一个QLabel对象
+        self.lbl = QtWidgets.QLabel(self)  # 初始化一个QLabel对象
         self.lbl.setScaledContents(True)
         self.setCentralWidget(self.lbl)
 

@@ -1,8 +1,5 @@
-# 初始音乐状态
 audio: true
-# 初始背景音乐
 bg_music: 蒙德
-# 人物对应对帧率和缩放系数
 frame_scale:
   七七:
   - 60
@@ -91,9 +88,6 @@ frame_scale:
   魈:
   - 60
   - 0.8500000000000001
-# 人物图片路径
 img_path: png
-# 人物语音/背景音乐路径
 music_path: music
-# 初始加载人物
 role: 早柚
