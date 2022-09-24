@@ -107,7 +107,7 @@ class Pet(QMainWindow):
         self.timer = QTimer()
         self.timer.timeout.connect(self.act)
         if self.audio_player:
-            self.role_music.setText('人物语音~')
+            self.role_music.setText('人物语音～')
             greet = greeting(self.now_time)
             if greet:
                 audio = mixer.Sound(os.path.join(BASE_DIR, self.music_path, self.role_name, greet))
@@ -210,23 +210,25 @@ class Pet(QMainWindow):
         self.pets.addAction(yl1)
 
         self.bgmusics = self.menu.addMenu('音乐')
-        self.md_music = QAction('蒙德~', self) if self.bg_music == '蒙德' else QAction('蒙德', self)
-        self.md_music.triggered.connect(lambda: self.bg_music('蒙德'))
+        self.md_music = QAction('蒙德～', self) if self.bg_music == '蒙德' else QAction('蒙德', self)
+
+        self.md_music.triggered.connect(lambda: self.set_audio(self.md_music.text()))
         self.bgmusics.addAction(self.md_music)
 
-        self.ly_music = QAction('璃月~', self) if self.bg_music == '璃月' else QAction('璃月', self)
-        self.ly_music.triggered.connect(lambda: self.bg_music('璃月'))
+        self.ly_music = QAction('璃月～', self) if self.bg_music == '璃月' else QAction('璃月', self)
+        self.ly_music.triggered.connect(lambda: self.set_audio(self.ly_music.text()))
         self.bgmusics.addAction(self.ly_music)
 
-        self.dq_music = QAction('稻妻~', self) if self.bg_music == '稻妻' else QAction('稻妻', self)
-        self.dq_music.triggered.connect(lambda: self.bg_music('稻妻'))
+        self.dq_music = QAction('稻妻～', self) if self.bg_music == '稻妻' else QAction('稻妻', self)
+        self.dq_music.triggered.connect(lambda: self.set_audio(self.dq_music.text()))
         self.bgmusics.addAction(self.dq_music)
 
-        self.role_music = QAction('人物语音~', self) if self.audio_player else QAction('人物语音', self)
-        self.role_music.triggered.connect(self.role_audio)
+        self.role_music = QAction('人物语音～', self) if self.audio_player else QAction('人物语音', self)
+        # self.role_music.triggered.connect(self.role_audio)
+        self.role_music.triggered.connect(lambda: self.set_audio(self.role_music.text()))
         self.bgmusics.addAction(self.role_music)
         self.music_off = QAction('关闭所有', self)
-        self.music_off.triggered.connect(lambda: self.bg_music('关闭所有'))
+        self.music_off.triggered.connect(lambda: self.set_audio(self.music_off.text()))
         self.bgmusics.addAction(self.music_off)
 
         show = QAction('显示', self)
@@ -326,51 +328,110 @@ class Pet(QMainWindow):
     def showwin(self):
         self.setWindowOpacity(1)
 
-    def role_audio(self):
-        if not self.audio_player:
-            self.role_music.setText('人物语音～')
-            self.music_off.setText('关闭所有')
-        else:
-            self.role_music.setText('人物语音')
-            self.music_off.setText('关闭所有～')
-            if mixer.get_busy():
-                mixer.stop()
-            if mixer.music.get_busy():
-                mixer.music.stop()
-        self.audio_player = not self.audio_player
+    # def role_audio(self):
+    #     if not self.audio_player:
+    #         self.role_music.setText('人物语音～')
+    #         self.music_off.setText('关闭所有')
+    #     else:
+    #         self.role_music.setText('人物语音')
+    #         # self.music_off.setText('关闭所有～')
+    #         if mixer.get_busy():
+    #             mixer.stop()
+    #         if mixer.music.get_busy():
+    #             mixer.music.stop()
+    #     self.audio_player = not self.audio_player
+    #     config['audio'] = self.audio_player
+
+    def set_audio(self, area):
+        """
+        :param area: 输入相应的状态
+        :return:
+        """
+
+        all_music = [self.md_music, self.ly_music, self.dq_music, self.role_music, self.music_off]
+
+        # 判断是否为关闭所有
+        if '关闭所有' in area:
+            if '～' in area: # 之前为关闭所有 接下来需要取消关闭所有
+                self.music_off.setText('关闭所有')
+                pass
+            else:   # 接下来需要关闭所有
+                self.music_off.setText('关闭所有～')
+                self.audio_player = False
+                config['bg_music'] = False
+                [m.setText(m.text().replace('～','')) for m in all_music[:-1]] # 修改对应的状态显示
+                if mixer.get_busy():    # 关闭语音音效
+                    mixer.stop()
+                if mixer.music.get_busy():  # 关闭背景音效
+                    mixer.music.stop()
+        else: # 只是局部操作 [蒙德 璃月 稻妻]    [人物语音] 两者相互独立的
+            if '～' in area:  # ～表示之前为选中状态 需要执行取消选中操作
+                if area == '人物语音～':
+                    self.role_music.setText('人物语音')
+                    self.audio_player = False
+                    if mixer.get_busy():  # 关闭语音音效
+                        mixer.stop()
+                else:
+                    for m in all_music[:-2]:
+                        m.setText(area[:-1]) if m.text() == area else m.setText(m.text().replace('～',''))
+                    if mixer.music.get_busy():  # 关闭背景音效
+                        mixer.music.stop()
+            else:
+                self.music_off.setText('关闭所有')
+                if area == '人物语音':
+                    self.role_music.setText('人物语音～')
+                    self.audio_player = True
+                else:
+                    for m in all_music[:-2]:
+                        m.setText(area+'～') if m.text() == area else m.setText(m.text().replace('～',''))
+                    if mixer.music.get_busy():
+                        mixer.music.stop()
+                    mixer.music.load(os.path.join(BASE_DIR, self.music_path, area, 'background.mp3'))
+                    mixer.music.play(-1)
+                    config['bg_music'] = area
         config['audio'] = self.audio_player
 
-    def bg_music(self, area):
-        if area == '关闭所有':
-            self.music_off.setText('关闭所有～') if self.music_off.text() == '关闭所有' else self.music_off.setText('关闭所有')
-            self.role_music.setText('人物语音')
-            self.md_music.setText('蒙德')
-            self.ly_music.setText('璃月')
-            self.dq_music.setText('稻妻')
-            config['bg_music'], config['audio'] = False, False
-            if mixer.get_busy():
-                mixer.stop()
-            if mixer.music.get_busy():
-                mixer.music.stop()
-        else:
-            if area == '蒙德':
-                self.md_music.setText('蒙德～') if self.md_music.text() == '蒙德' else self.md_music.setText('蒙德')
-                self.ly_music.setText('璃月')
-                self.dq_music.setText('稻妻')
-                self.music_off.setText('关闭所有')
-            elif area == '璃月':
-                self.md_music.setText('蒙德')
-                self.ly_music.setText('璃月～') if self.ly_music.text() == '璃月' else self.ly_music.setText('璃月')
-                self.dq_music.setText('稻妻')
-                self.music_off.setText('关闭所有')
-            elif area == '稻妻':
-                self.md_music.setText('蒙德')
-                self.ly_music.setText('璃月')
-                self.dq_music.setText('稻妻～') if self.dq_music.text() == '稻妻' else self.dq_music.setText('稻妻')
-                self.music_off.setText('关闭所有')
-            mixer.music.load(os.path.join(BASE_DIR, self.music_path, area, 'background.mp3'))
-            mixer.music.play(-1)
-            config['bg_music'] = area
+
+
+        # if area == '关闭所有':
+        #     self.music_off.setText('关闭所有～') if self.music_off.text() == '关闭所有' else self.music_off.setText('关闭所有')
+        #     self.role_music.setText('人物语音')
+        #     self.md_music.setText('蒙德')
+        #     self.ly_music.setText('璃月')
+        #     self.dq_music.setText('稻妻')
+        #     config['bg_music'], config['audio'] = False, False
+        #     if mixer.get_busy():
+        #         mixer.stop()
+        #     if mixer.music.get_busy():
+        #         mixer.music.stop()
+        # else:
+        #     if area == '蒙德':
+        #         self.md_music.setText('蒙德～') if self.md_music.text() == '蒙德' else self.md_music.setText('蒙德')
+        #         self.ly_music.setText('璃月')
+        #         self.dq_music.setText('稻妻')
+        #         self.music_off.setText('关闭所有')
+        #     elif area == '璃月':
+        #         self.md_music.setText('蒙德')
+        #         self.ly_music.setText('璃月～') if self.ly_music.text() == '璃月' else self.ly_music.setText('璃月')
+        #         self.dq_music.setText('稻妻')
+        #         self.music_off.setText('关闭所有')
+        #     elif area == '稻妻':
+        #         self.md_music.setText('蒙德')
+        #         self.ly_music.setText('璃月')
+        #         self.dq_music.setText('稻妻～') if self.dq_music.text() == '稻妻' else self.dq_music.setText('稻妻')
+        #         self.music_off.setText('关闭所有')
+        #
+        #     status = [self.md_music.text(), self.ly_music.text(), self.dq_music.text()]
+        #     # print(status)
+        #     if status == ['蒙德', '璃月', '稻妻']:
+        #         if mixer.music.get_busy():
+        #             mixer.music.stop()
+        #     if '蒙德～' in status or '璃月～' in status or '稻妻～' in status:
+        #         if mixer.music.get_busy():
+        #             mixer.music.stop()
+        #         mixer.music.load(os.path.join(BASE_DIR, self.music_path, area, 'background.mp3'))
+        #         mixer.music.play(-1)
+
 
 
 if __name__ == '__main__':
