@@ -1,0 +1,8 @@
+roleWeapon
+roleMaterial
+roleIntro
+countryIntro
+materialGet
+materialRefresh
+weaponGet
+weaponFunc
