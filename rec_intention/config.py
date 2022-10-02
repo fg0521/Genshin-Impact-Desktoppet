@@ -1,7 +1,5 @@
 
 class Config():
-
-
     hidden_size = 768
     dropout_rate = 0.1
     lr = 2e-5
@@ -15,6 +13,7 @@ class Config():
     device = 'cpu'
     seq_labels_path = 'data/intents.txt'
     token_labels_path = 'data/slots.txt'
+    my_model_dir = 'checkpoints/model2.pth'
     seqlabel2id = {}
     id2seqlabel = {}
     with open(seq_labels_path, 'r') as fp:

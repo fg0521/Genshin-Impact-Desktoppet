@@ -1,5 +1,5 @@
 import torch.nn as nn
-from config import Config
+
 
 
 class IntentClassifier(nn.Module):
@@ -23,7 +23,7 @@ class SlotClassifier(nn.Module):
         x = self.dropout(x)
         return self.linear(x)
 
-if __name__ == '__main__':
-    config = Config()
-    slot_classifier = SlotClassifier(config.hidden_size, config.slot_labels_num, config.dropout_rate)
-    print(slot_classifier)
+# if __name__ == '__main__':
+#     config = Config()
+#     slot_classifier = SlotClassifier(config.hidden_size, config.slot_labels_num, config.dropout_rate)
+#     print(slot_classifier)

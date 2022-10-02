@@ -1,14 +1,13 @@
 import torch.nn as nn
-from transformers import BertModel, BertPreTrainedModel
-
-from model.classifier import IntentClassifier, SlotClassifier
+from transformers import BertModel, BertPreTrainedModel,DistilBertModel,AlbertModel
+from rec_intention.model.classifier import IntentClassifier, SlotClassifier
 
 
 class JointBert(nn.Module):
 
     def __init__(self, config):
         super(JointBert,self).__init__()
-        self.bert = BertModel.from_pretrained(config.pre_train_model)
+        self.bert = AlbertModel.from_pretrained(config.pre_train_model)
         self.intent_classifier = IntentClassifier(config.hidden_size, config.intent_labels_num,config.dropout_rate)
         self.slot_classifier = SlotClassifier(config.hidden_size, config.slot_labels_num,config.dropout_rate)
         self.criterion = nn.CrossEntropyLoss()
