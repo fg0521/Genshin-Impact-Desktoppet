@@ -328,19 +328,19 @@ class Pet(QMainWindow):
     def showwin(self):
         self.setWindowOpacity(1)
 
-    # def role_audio(self):
-    #     if not self.audio_player:
-    #         self.role_music.setText('人物语音～')
-    #         self.music_off.setText('关闭所有')
-    #     else:
-    #         self.role_music.setText('人物语音')
-    #         # self.music_off.setText('关闭所有～')
-    #         if mixer.get_busy():
-    #             mixer.stop()
-    #         if mixer.music.get_busy():
-    #             mixer.music.stop()
-    #     self.audio_player = not self.audio_player
-    #     config['audio'] = self.audio_player
+    def role_audio(self):
+        if not self.audio_player:
+            self.role_music.setText('人物语音～')
+            self.music_off.setText('关闭所有')
+        else:
+            self.role_music.setText('人物语音')
+            # self.music_off.setText('关闭所有～')
+            if mixer.get_busy():
+                mixer.stop()
+            if mixer.music.get_busy():
+                mixer.music.stop()
+        self.audio_player = not self.audio_player
+        config['audio'] = self.audio_player
 
     def set_audio(self, area):
         """
