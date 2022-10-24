@@ -9,10 +9,10 @@ class Config():
     max_len = 40
     checkpoint_path = 'checkpoints'
     pre_train_model = 'pre_train_model/chinese-bert-wwm-ext'
-    train_path = 'data/train_process.json'
+    train_path = 'train_data/train_process.json'
     device = 'cpu'
-    seq_labels_path = 'data/intents.txt'
-    token_labels_path = 'data/slots.txt'
+    seq_labels_path = 'train_data/intents.txt'
+    token_labels_path = 'train_data/slots.txt'
     my_model_dir = 'checkpoints/model2.pth'
     seqlabel2id = {}
     id2seqlabel = {}

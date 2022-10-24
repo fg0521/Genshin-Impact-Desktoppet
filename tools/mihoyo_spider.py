@@ -95,6 +95,62 @@ class MasterSpider():
                 time.sleep(2)
             except:
                 continue
+
+
+class AreaSpider():
+    def __init__(self):
+        self.url = 'https://waf-api-takumi.mihoyo.com/common/map_user/ys_obc/v1/map/map_anchor/list?map_id=2&app_sn=ys_obc&lang=zh-cn'
+
+    def parse(self):
+        res =requests.get(self.url)
+        areas = []
+        if res.status_code == 200:
+            data_list = eval(res.text)['data']['list']
+            for i in data_list:
+                for j in i['children']:
+                    areas.append({'first_id':i['id'],'first_area':i['name'],'second_id':j['id'],'second_area':j['name']})
+                # areas.append({'id':i['id'],'area':i['name'],'second_area':[{'id':j['id'],'area':j['name']} for j in i['children']]})
+        df =pd.DataFrame(data=areas)
+        df['id'] = [i for i in range(1,len(df)+1)]
+        df.to_csv('../rec_intention/kg_data/area_details.csv',index=False)
+        pprint.pprint(areas)
+
+
+class RoleWeaponSpider():
+    def __init__(self):
+        self.url = ' https://waf-api-takumi.mihoyo.com/common/map_user/ys_obc/v1/map/game_item?map_id=2&app_sn=ys_obc&lang=zh-cn'
+
+    def parse(self):
+        res = requests.get(self.url)
+        if res.status_code == 200:
+            data = eval(res.text)
+            roles = data['avatar']['list']
+            weapons = data['weapon']['list']
+            role_data,weapon_data = [],[]
+            for role in roles:
+                role_data.append({'name':role['name'],'level':role['level'],'icon_':role['icon']})
+            for weapon in weapons:
+                weapon_data.append({'name': weapon['name'], 'level': weapon['level'], 'icon': weapon['icon']})
+        df1 = pd.DataFrame(data=role_data)
+        df2 = pd.DataFrame(data=weapon_data)
+        df1['id'] = [i for i in range(1,len(df1)+1)]
+        df2['id'] = [i for i in range(1,len(df2)+1)]
+        df1.to_csv('../rec_intention/kg_data/all_role.csv', index=False)
+        df2.to_csv('../rec_intention/kg_data/all_weapon.csv', index=False)
+
+class AllBiology():
+    def __init__(self):
+        self.url = 'https://waf-api-takumi.mihoyo.com/common/map_user/ys_obc/v1/map/point/list?map_id=2&app_sn=ys_obc&lang=zh-cn'
+
+    def parse(self):
+        res = requests.get(self.url)
+        if res.status_code == 200:
+            data = eval(res.text)
+            labels = data['data']['label_list']
+            data_label = []
+            for l in labels:
+                data_label.append({'id':l['id'],'name':l['name'],'icon':l['icon'],'all_area':l['is_all_area']})
+
 def clear_role_info():
     df = pd.read_csv('../rec_intention/kg_data/mihoyo.csv')
 
@@ -185,5 +241,5 @@ def add_info():
 
 
 if __name__ == "__main__":
-    m = MasterSpider()
-    m.parse()
+    a = AreaSpider()
+    a.parse()
