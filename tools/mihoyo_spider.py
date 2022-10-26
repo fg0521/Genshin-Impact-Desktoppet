@@ -7,6 +7,8 @@ import pandas as pd
 import requests
 
 
+false = null = true = ''
+
 class RoleSpider():
     def __init__(self):
         self.url ='https://api-static.mihoyo.com/common/blackboard/ys_obc/v1/content/info?app_sn=ys_obc&content_id='
@@ -15,11 +17,11 @@ class RoleSpider():
         }
 
     def parser(self):
-        global false, null, true
+
         for i in range(6000):
             try:
                 url = self.url+str(i)
-                false = null = true = ''
+
                 res = requests.get(url)
                 # print(res.text)
                 res = eval(res.text)
@@ -65,8 +67,6 @@ class MasterSpider():
         self.url = 'https://api-static.mihoyo.com/common/blackboard/ys_obc/v1/content/info?app_sn=ys_obc&content_id='
 
     def parse(self):
-        global false, null, true
-        false = null = true = ''
 
         for i in range(5000,8000):
             try:
@@ -161,7 +161,44 @@ class FoodSpider():
             data = eval(res.text)['data']['content']['contents'][0]['text']
             pprint.pprint(data)
 
+class WeaponSpider():
+    def __init__(self):
+        self.url = 'https://api-static.mihoyo.com/common/blackboard/ys_obc/v1/content/info?app_sn=ys_obc&content_id='
+        df2 = pd.read_csv('../rec_intention/kg_data/to_do/weapon_num.csv')
+        self.weapon_id = list(df2['id'])
 
+    def parse(self):
+        for i in self.weapon_id:
+            url = self.url+str(291)
+            res = requests.get(url)
+            if res.status_code == 200:
+                pprint.pprint(eval(res.text))
+                data = eval(res.text)['data']['content']
+                name = data['title']
+                id = data['id']
+                icon = data['icon']
+                ext = eval(eval(data['ext'])["c_5"]["filter"]["text"])
+                text = data['contents'][0]['text'].replace('\n','')
+                desc = [re.sub('<(.*?)>','',str(i)) for i in re.findall('装备描述(.*?)冒险等阶限制',text)]
+                limit = re.findall('obc-tmpl__rich-text">冒险等阶限制：(.*?)</td></tr>',text)
+                getting = [re.sub('<(.*?)>','',str(i)) for i in re.findall('obc-tmpl__rich-text">获取途径：(.*?)</p></td></tr>',text)]
+                story = [re.sub('<(.*?)>','',str(i)) for i in re.findall('相关故事(.*?)</p></div>',text)]
+                material = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<span class="obc-tmpl__icon-text">(.*?)</span>',text)]
+                material_num = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<span class="obc-tmpl__icon-num">(.*?)</span>',text)]
+                grade = [re.sub('<(.*?)>','',str(i)) for i in re.findall('class="obc-tmpl__switch-btn">(.*?)</li>',text)]
+
+                print(name)
+                print(id)
+                print(ext)
+                print(desc)
+                print(limit)
+                print(getting)
+                print(story)
+                print(material)
+                print(material_num)
+                print(grade)
+
+            break
 
 def clear_role_info():
     df = pd.read_csv('../rec_intention/kg_data/mihoyo.csv')
@@ -303,9 +340,5 @@ def clear_master():
 
 if __name__ == "__main__":
 
-    clear_master()
-    # clear_food()
-    # df = pd.read_csv('../rec_intention/kg_data/master.csv')
-    # df = df[df['dropping'].str.contains('摩拉')]
-    # df.to_csv('../rec_intention/kg_data/master.csv',index=False)
-    # print(df)
+    w = WeaponSpider()
+    w.parse()
