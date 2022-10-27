@@ -7,6 +7,8 @@ import pandas as pd
 import requests
 
 
+false = null = true = ''
+
 class RoleSpider():
     def __init__(self):
         self.url ='https://api-static.mihoyo.com/common/blackboard/ys_obc/v1/content/info?app_sn=ys_obc&content_id='
@@ -15,11 +17,11 @@ class RoleSpider():
         }
 
     def parser(self):
-        global false, null, true
+
         for i in range(6000):
             try:
                 url = self.url+str(i)
-                false = null = true = ''
+
                 res = requests.get(url)
                 # print(res.text)
                 res = eval(res.text)
@@ -65,10 +67,8 @@ class MasterSpider():
         self.url = 'https://api-static.mihoyo.com/common/blackboard/ys_obc/v1/content/info?app_sn=ys_obc&content_id='
 
     def parse(self):
-        global false, null, true
-        false = null = true = ''
 
-        for i in range(3296,5000):
+        for i in range(5000,8000):
             try:
                 url = 'https://api-static.mihoyo.com/common/blackboard/ys_obc/v1/content/info?app_sn=ys_obc&content_id=' + str(i)
                 res = requests.get(url)
@@ -88,10 +88,10 @@ class MasterSpider():
                     df = pd.DataFrame(data=[{'id': id, 'name': name, 'dropping': dropping, 'attack': attack, 'element': element,
                                              'method': method, 'backstory': backstory}])
 
-                    if os.path.exists('../rec_intention/kg_data/master.csv'):
-                        df.to_csv('../rec_intention/kg_data/master.csv', mode='a', index=False, header=False, encoding='utf-8')
+                    if os.path.exists('../rec_intention/kg_data/master2.csv'):
+                        df.to_csv('../rec_intention/kg_data/master2.csv', mode='a', index=False, header=False, encoding='utf-8')
                     else:
-                        df.to_csv('../rec_intention/kg_data/master.csv', index=False, encoding='utf-8')
+                        df.to_csv('../rec_intention/kg_data/master2.csv', index=False, encoding='utf-8')
                 time.sleep(2)
             except:
                 continue
@@ -118,14 +118,14 @@ class AreaSpider():
 
 class RoleWeaponSpider():
     def __init__(self):
-        self.url = ' https://waf-api-takumi.mihoyo.com/common/map_user/ys_obc/v1/map/game_item?map_id=2&app_sn=ys_obc&lang=zh-cn'
+        self.url = 'https://waf-api-takumi.mihoyo.com/common/map_user/ys_obc/v1/map/game_item?map_id=2&app_sn=ys_obc&lang=zh-cn'
 
     def parse(self):
         res = requests.get(self.url)
         if res.status_code == 200:
             data = eval(res.text)
-            roles = data['avatar']['list']
-            weapons = data['weapon']['list']
+            roles = data['data']['avatar']['list']
+            weapons = data['data']['weapon']['list']
             role_data,weapon_data = [],[]
             for role in roles:
                 role_data.append({'name':role['name'],'level':role['level'],'icon_':role['icon']})
@@ -150,6 +150,55 @@ class AllBiology():
             data_label = []
             for l in labels:
                 data_label.append({'id':l['id'],'name':l['name'],'icon':l['icon'],'all_area':l['is_all_area']})
+
+class FoodSpider():
+    def __init__(self):
+        self.url = 'https://api-static.mihoyo.com/common/blackboard/ys_obc/v1/content/info?app_sn=ys_obc&content_id=103'
+
+    def parse(self):
+        res = requests.get(self.url)
+        if res.status_code == 200:
+            data = eval(res.text)['data']['content']['contents'][0]['text']
+            pprint.pprint(data)
+
+class WeaponSpider():
+    def __init__(self):
+        self.url = 'https://api-static.mihoyo.com/common/blackboard/ys_obc/v1/content/info?app_sn=ys_obc&content_id='
+        df2 = pd.read_csv('../rec_intention/kg_data/to_do/weapon_num.csv')
+        self.weapon_id = list(df2['id'])
+
+    def parse(self):
+        for i in self.weapon_id:
+            url = self.url+str(291)
+            res = requests.get(url)
+            if res.status_code == 200:
+                pprint.pprint(eval(res.text))
+                data = eval(res.text)['data']['content']
+                name = data['title']
+                id = data['id']
+                icon = data['icon']
+                ext = eval(eval(data['ext'])["c_5"]["filter"]["text"])
+                text = data['contents'][0]['text'].replace('\n','')
+                desc = [re.sub('<(.*?)>','',str(i)) for i in re.findall('装备描述(.*?)冒险等阶限制',text)]
+                limit = re.findall('obc-tmpl__rich-text">冒险等阶限制：(.*?)</td></tr>',text)
+                getting = [re.sub('<(.*?)>','',str(i)) for i in re.findall('obc-tmpl__rich-text">获取途径：(.*?)</p></td></tr>',text)]
+                story = [re.sub('<(.*?)>','',str(i)) for i in re.findall('相关故事(.*?)</p></div>',text)]
+                material = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<span class="obc-tmpl__icon-text">(.*?)</span>',text)]
+                material_num = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<span class="obc-tmpl__icon-num">(.*?)</span>',text)]
+                grade = [re.sub('<(.*?)>','',str(i)) for i in re.findall('class="obc-tmpl__switch-btn">(.*?)</li>',text)]
+
+                print(name)
+                print(id)
+                print(ext)
+                print(desc)
+                print(limit)
+                print(getting)
+                print(story)
+                print(material)
+                print(material_num)
+                print(grade)
+
+            break
 
 def clear_role_info():
     df = pd.read_csv('../rec_intention/kg_data/mihoyo.csv')
@@ -240,6 +289,56 @@ def add_info():
     #     row['weapon_type'] =
 
 
+def clear_food():
+    df = pd.read_csv('../rec_intention/kg_data/food.csv')
+    df['info'] = df['info'].apply(lambda x:'|'.join([i.split('/')[1] for i in sorted(eval(x))]))
+    df1 = df['info'].str.split('|', expand=True)
+    df.drop(['info'], inplace=True, axis=1)
+    df1.columns = ['func_type','rarity','getting1']
+    # print(df1)
+    df = df.join(df1)
+    def fill_food_name(name,cond):
+        name,cond = str(name),str(cond)
+        # print(cond)
+        if name != 'nan':
+            s = name
+        else:
+            if cond.startswith('完成烹饪'):
+                s = '奇怪的'+cond[4:]
+            elif cond.startswith('成功烹饪'):
+                s = cond[4:]
+            elif cond.startswith('完美烹饪'):
+                s = '美味的'+cond[4:]
+            else:
+                s = 'None'
+        return s
+
+    df['name'] = df.apply(lambda x:fill_food_name(x['name'],x['condition']),axis=1)
+    df['getting'] = df.apply(lambda x:'【'+str(x['getting1'])+'】'+str(x['getting']),axis=1)
+    df.drop(['getting1'],axis=1,inplace=True)
+    df.insert(0,'id',[i for i in range(1,len(df)+1)])
+    df.to_csv('../rec_intention/kg_data/done/label-food.csv',index=False,encoding='utf-8')
+    print(df)
+
+def clear_master():
+    df = pd.read_csv('../rec_intention/kg_data/master.csv')
+    def get_ele(attack):
+        attack = eval(attack)
+        e,a = '无',[]
+        if attack:
+            if attack[0] in ['无','风','火','水','岩','雷','冰','物理','草']:
+                e = attack[0]
+            attack.remove(attack[0])
+            a = attack
+        return e
+
+    df['element'] = df.apply(lambda x:get_ele(x['attack']),axis=1)
+    df['attack'] = df['attack'].apply(lambda x:str([i for i in eval(x) if i not in ['无','风','火','水','岩','雷','冰','物理','草']]))
+
+    df.to_csv('../rec_intention/kg_data/done/label-master.csv',index=False,encoding='utf-8')
+    print(df[['element','attack']])
+
 if __name__ == "__main__":
-    a = AreaSpider()
-    a.parse()
+
+    w = WeaponSpider()
+    w.parse()
