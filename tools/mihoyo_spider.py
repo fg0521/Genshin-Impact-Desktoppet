@@ -172,10 +172,10 @@ class WeaponSpider():
     def parse(self):
 
         for i in self.weapon_id:
-            url = self.url+str(291)
+            url = self.url+str(i)
             res = requests.get(url)
             if res.status_code == 200:
-                pprint.pprint(eval(res.text))
+                # pprint.pprint(eval(res.text))
                 data = eval(res.text)['data']['content']
                 name = data['title']
                 id = data['id']
@@ -190,9 +190,9 @@ class WeaponSpider():
                 material_num = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<span class="obc-tmpl__icon-num">(.*?)</span>',text)]
                 grade = [re.sub('<(.*?)>','',str(i)) for i in re.findall('class="obc-tmpl__switch-btn">(.*?)</li>',text)]
                 effect = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<tbody><tr><td colspan="\d">(.*?)</li></ul></td></tr></tbody>',text)]
-
+                print(name)
                 data = [{'name':name,'id':id,'ext':ext,'desc':desc,'limit':limit,'story':story,
-                         'material':material,"material_num":material_num,'grade':grade,'effect':effect}]
+                         'material':material,"material_num":material_num,'grade':grade,'effect':effect,'icon':icon}]
                 df = pd.DataFrame(data=data)
                 if os.path.exists(self.path):
                     df.to_csv(self.path, mode='a', index=False, header=False, encoding='utf-8')
@@ -203,13 +203,65 @@ class WeaponSpider():
     def clear(self):
         # name,id,ext,desc,limit,getting,story,material,"material_num",grade,effect
         df = pd.read_csv(self.path)
-        df['ext'] = df['ext'].apply(lambda x:'|'.join([i.split('/')[1] for i in eval(x)]))
+        def split_ext(x):
+            x = eval(x)
+            res ={'武器类型':'None', '武器星级':'None', '属性加成':'None', '获取途径':'None'}
+            for i in x:
+                s = i.split('/')
+                if res[s[0]] != 'None':
+                    res[s[0]] = res[s[0]]+f"、{s[1]}"
+                else:
+                    res[s[0]] = s[1]
+            res = [v for _,v in res.items()]
+            return '|'.join(res)
+
+        df['ext'] = df['ext'].apply(lambda x:split_ext(x))
         df1 = df['ext'].str.split('|', expand=True)
         df1.columns = ['weapon_type','rarity','attr_add','getting']
         df = df.join(df1)
-        df['introd'] = df['desc'].apply(lambda x:re.findall('精炼(1/2/3/4/5)(.*?)·',str(x))[0])
-        df['refine'] = df['desc'].apply(lambda x:re.findall('精炼(1/2/3/4/5)(.*?)·',str(x))[0])
 
+        def skill(x,mode=0):
+            x= eval(x)
+            if not x:
+                return 'None'
+            else:
+                if mode == 0:
+                    s = ''.join(re.findall('\)(.*?)·', x[0]))
+                    return s if s else 'None'
+                else:
+                    sp = ''.join(re.findall('\)(.*?)·', x[0]))+'·'
+                    return x[0].replace(sp,'')
+
+
+        df['introd'] = df['desc'].apply(lambda x:skill(x,0))
+        df['refine'] = df['desc'].apply(lambda x:skill(x,1))
+
+        def add_material_num(name,num):
+            name,num = eval(name),eval(num)
+            index = name.index('摩拉')
+            res = []
+            for i in range(index):
+                res.append(name[i]+num[i])
+            return str(res)
+
+        df['material'] = df.apply(lambda x:add_material_num(x['material'],x['material_num']),axis=1)
+        df['grade'] = df['grade'].apply(lambda x:[i.replace(' ','') for i in eval(x) if '角色' not in i])
+
+        def add_breaking(grade,effect):
+            grade,effect = grade,eval(effect)
+            res = {}
+            for i in range(len(grade)):
+                g = grade[i]
+                e = effect[i]
+                res[g]=e
+            return str(res)
+        df['breaking'] = df.apply(lambda x:add_breaking(x['grade'],x['effect']),axis=1)
+        df = df[['name','id','limit','story','material','icon','breaking','introd','refine','weapon_type','rarity','attr_add','getting']]
+        df['limit'] = df['limit'].apply(lambda x:eval(x)[0] if eval(x) else '无')
+        df['story'] = df['story'].apply(lambda x:''.join(eval(x)))
+        df['label'] = 'weapon'
+        print(df.head(10))
+        df.to_csv('../rec_intention/kg_data/done/label-weapon.csv',index=False,encoding='utf-8')
 
 
 def clear_role_info():
@@ -352,5 +404,32 @@ def clear_master():
 
 if __name__ == "__main__":
 
-    w = WeaponSpider()
-    w.parse()
+    df = pd.read_csv('../rec_intention/kg_data/breaking_material.csv')
+    df = df[['material_id','name','info']]
+
+    def split_info(x,mode):
+        x = (eval(x))
+        x = [re.sub('[\d]+级\*(\d\d|\d)[；]*','',i) for i in x]
+        getting_idx,desc_idx,using_idx = -1,-1,-1
+        for i in range(len(x)):
+            # if '获得方式：' in x[i]:
+            #     getting_idx = i
+            if x[i].startswith('描述：'):
+                desc_idx=i
+            if x[i].startswith('用途：'):
+                using_idx = i
+        if mode == 1:
+            return ''.join(x[:desc_idx])
+        if mode ==2:
+            return ''.join(x[desc_idx+1:using_idx])
+        if mode == 3:
+            return ''.join(x[using_idx+1:])
+
+
+    df['getting'] = df['info'].apply(lambda x:split_info(x,1))
+    df['desc'] = df['info'].apply(lambda x:split_info(x,2))
+    df['using'] = df['info'].apply(lambda x:split_info(x,3))
+    df.drop(['info'],axis=1,inplace=True)
+
+    print(df.head(10))
+    df.to_csv('../rec_intention/kg_data/breaking_material1.csv',index=False,encoding='utf-8')
