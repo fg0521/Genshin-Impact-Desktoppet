@@ -166,8 +166,11 @@ class WeaponSpider():
         self.url = 'https://api-static.mihoyo.com/common/blackboard/ys_obc/v1/content/info?app_sn=ys_obc&content_id='
         df2 = pd.read_csv('../rec_intention/kg_data/to_do/weapon_num.csv')
         self.weapon_id = list(df2['id'])
+        # self.weapon_id = [1]
+        self.path = '../rec_intention/kg_data/weapon_info.csv'
 
     def parse(self):
+
         for i in self.weapon_id:
             url = self.url+str(291)
             res = requests.get(url)
@@ -181,24 +184,33 @@ class WeaponSpider():
                 text = data['contents'][0]['text'].replace('\n','')
                 desc = [re.sub('<(.*?)>','',str(i)) for i in re.findall('装备描述(.*?)冒险等阶限制',text)]
                 limit = re.findall('obc-tmpl__rich-text">冒险等阶限制：(.*?)</td></tr>',text)
-                getting = [re.sub('<(.*?)>','',str(i)) for i in re.findall('obc-tmpl__rich-text">获取途径：(.*?)</p></td></tr>',text)]
+                # getting = [re.sub('<(.*?)>','',str(i)) for i in re.findall('obc-tmpl__rich-text">获取途径：(.*?)</p></td></tr>',text)]
                 story = [re.sub('<(.*?)>','',str(i)) for i in re.findall('相关故事(.*?)</p></div>',text)]
                 material = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<span class="obc-tmpl__icon-text">(.*?)</span>',text)]
                 material_num = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<span class="obc-tmpl__icon-num">(.*?)</span>',text)]
                 grade = [re.sub('<(.*?)>','',str(i)) for i in re.findall('class="obc-tmpl__switch-btn">(.*?)</li>',text)]
+                effect = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<tbody><tr><td colspan="\d">(.*?)</li></ul></td></tr></tbody>',text)]
 
-                print(name)
-                print(id)
-                print(ext)
-                print(desc)
-                print(limit)
-                print(getting)
-                print(story)
-                print(material)
-                print(material_num)
-                print(grade)
+                data = [{'name':name,'id':id,'ext':ext,'desc':desc,'limit':limit,'story':story,
+                         'material':material,"material_num":material_num,'grade':grade,'effect':effect}]
+                df = pd.DataFrame(data=data)
+                if os.path.exists(self.path):
+                    df.to_csv(self.path, mode='a', index=False, header=False, encoding='utf-8')
+                else:
+                    df.to_csv(self.path, index=False, encoding='utf-8')
+                time.sleep(2)
 
-            break
+    def clear(self):
+        # name,id,ext,desc,limit,getting,story,material,"material_num",grade,effect
+        df = pd.read_csv(self.path)
+        df['ext'] = df['ext'].apply(lambda x:'|'.join([i.split('/')[1] for i in eval(x)]))
+        df1 = df['ext'].str.split('|', expand=True)
+        df1.columns = ['weapon_type','rarity','attr_add','getting']
+        df = df.join(df1)
+        df['introd'] = df['desc'].apply(lambda x:re.findall('精炼(1/2/3/4/5)(.*?)·',str(x))[0])
+        df['refine'] = df['desc'].apply(lambda x:re.findall('精炼(1/2/3/4/5)(.*?)·',str(x))[0])
+
+
 
 def clear_role_info():
     df = pd.read_csv('../rec_intention/kg_data/mihoyo.csv')
