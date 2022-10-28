@@ -264,6 +264,40 @@ class WeaponSpider():
         df.to_csv('../rec_intention/kg_data/done/label-weapon.csv',index=False,encoding='utf-8')
 
 
+class NPCSpider():
+    def __init__(self):
+        self.url = 'https://api-static.mihoyo.com/common/blackboard/ys_obc/v1/content/info?app_sn=ys_obc&content_id='
+        self.path = '../rec_intention/kg_data/to_do/weapon_num.csv'
+
+    def parse(self):
+        for i in range(1):
+            url = self.url+str('3548')
+            res = requests.get(url)
+            if res.status_code ==200:
+                data = eval(res.text)['data']['content']
+                name = data['title']
+                id = data['id']
+                icon = data['icon']
+                text = data['contents'][0]['text'].replace('\n','')
+                sex = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<td class="h3">性别</td> <td>(.*?)</td>',text)]
+                sex = sex[0] if sex else ''
+
+                pos = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<td class="h3">位置</td> <td>(.*?)</td>',text)]
+                pos = pos[0] if pos else ''
+
+                task = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<td class="h3">相关任务</td> <td>(.*?)</td>',text)]
+                task = task[0] if task else ''
+
+                profession = [re.sub('<(.*?)>','',str(i)) for i in re.findall('class="obc-tmpl__rich-text"><p>(.*?)</p></td></tr>',text)]
+                profession = profession[0] if profession else ''
+
+                tips = [re.sub('<(.*?)>', '', str(i)) for i in re.findall('<p style="white-space: pre-wrap;">(.*?)</p></td></tr>', text)]
+                tips = list(set(tips))
+                print(name,sex,pos,task,profession,tips)
+
+                pprint.pprint(data)
+
+
 def clear_role_info():
     df = pd.read_csv('../rec_intention/kg_data/mihoyo.csv')
 
@@ -402,34 +436,37 @@ def clear_master():
     df.to_csv('../rec_intention/kg_data/done/label-master.csv',index=False,encoding='utf-8')
     print(df[['element','attack']])
 
-if __name__ == "__main__":
-
+def clear_material():
     df = pd.read_csv('../rec_intention/kg_data/breaking_material.csv')
-    df = df[['material_id','name','info']]
+    df = df[['material_id', 'name', 'info']]
 
-    def split_info(x,mode):
+    def split_info(x, mode):
         x = (eval(x))
-        x = [re.sub('[\d]+级\*(\d\d|\d)[；]*','',i) for i in x]
-        getting_idx,desc_idx,using_idx = -1,-1,-1
+        x = [re.sub('[\d]+级\*(\d\d|\d)[；]*', '', i) for i in x]
+        getting_idx, desc_idx, using_idx = -1, -1, -1
         for i in range(len(x)):
             # if '获得方式：' in x[i]:
             #     getting_idx = i
             if x[i].startswith('描述：'):
-                desc_idx=i
+                desc_idx = i
             if x[i].startswith('用途：'):
                 using_idx = i
         if mode == 1:
             return ''.join(x[:desc_idx])
-        if mode ==2:
-            return ''.join(x[desc_idx+1:using_idx])
+        if mode == 2:
+            return ''.join(x[desc_idx + 1:using_idx])
         if mode == 3:
-            return ''.join(x[using_idx+1:])
+            return ''.join(x[using_idx + 1:])
 
-
-    df['getting'] = df['info'].apply(lambda x:split_info(x,1))
-    df['desc'] = df['info'].apply(lambda x:split_info(x,2))
-    df['using'] = df['info'].apply(lambda x:split_info(x,3))
-    df.drop(['info'],axis=1,inplace=True)
+    df['getting'] = df['info'].apply(lambda x: split_info(x, 1))
+    df['desc'] = df['info'].apply(lambda x: split_info(x, 2))
+    df['using'] = df['info'].apply(lambda x: split_info(x, 3))
+    df.drop(['info'], axis=1, inplace=True)
 
     print(df.head(10))
-    df.to_csv('../rec_intention/kg_data/breaking_material1.csv',index=False,encoding='utf-8')
+    df.to_csv('../rec_intention/kg_data/breaking_material1.csv', index=False, encoding='utf-8')
+
+if __name__ == "__main__":
+
+    npc = NPCSpider()
+    npc.parse()
