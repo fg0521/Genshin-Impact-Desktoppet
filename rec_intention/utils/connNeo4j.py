@@ -15,34 +15,37 @@ class Neo4j():
         self.config = config
         self.graph = Graph(self.config['api'], auth=self.config['auth'])
 
-    def search_node(self, label, attrs):
+    def search_node(self, label, attrs,unique_key):
         """
         :param label: 节点标签
         :param attrs: 节点属性键值对
         :return: 匹配到的节点
         """
-        name = list(attrs.keys())[0]
-        n = f"_.{name}" + "=" + "\"" + attrs[name] + "\""
+        # name = list(attrs.keys())[0]
+        # n = f"_.{name}" + "=" + "\"" + attrs[name] + "\""
+        n = f"_.{unique_key}" + "=" + "\"" + attrs[unique_key] + "\""
         matcher = NodeMatcher(self.graph)
         res = matcher.match(label).where(n).first()
         return res if res else ''
 
-    def create_node(self, label, attrs):
+    def create_node(self, label, attrs,unique_key='id'):
         """
         :param label: 节点标签
         :param attrs: 节点属性键值对
         :return: 创建节点
         """
         assert attrs, "The attr can't be None!"
-        name = list(attrs.keys())[0]
-        if not self.search_node(label, attrs):
+        # name = list(attrs.keys())[0]
+        if not self.search_node(label, attrs,unique_key):
             node = Node(label, **attrs)
             self.graph.create(node)
-            print(f'「{attrs[name]}」: Succeed to build Node')
+            # print(f'「{attrs[name]}」: Succeed to build Node')
+            print(f'「{attrs[unique_key]}」: Succeed to build Node')
         else:
-            print(f'「{attrs[name]}」: Node already existed')
+            # print(f'「{attrs[name]}」: Node already existed')
+            print(f'「{attrs[unique_key]}」: Node already existed')
 
-    def create_relationship(self, label1, attrs1, relationship, label2, attrs2):
+    def create_relationship(self, label1, attrs1, relationship, label2, attrs2,unique_key1,unique_key2):
         """
         :param label1: 节点标签1
         :param attrs1: 节点属性键值对1
@@ -52,8 +55,8 @@ class Neo4j():
         :return:
         """
         assert attrs1 and attrs2,"The attr can't be None!"
-        node1 = self.search_node(label1, attrs1)
-        node2 = self.search_node(label2, attrs2)
+        node1 = self.search_node(label1, attrs1,unique_key1)
+        node2 = self.search_node(label2, attrs2,unique_key2)
         if node1 and node2:
             r = Relationship(node1, relationship, node2)
             self.graph.create(r)
@@ -61,7 +64,7 @@ class Neo4j():
         else:
             print(f'「{relationship}」: Failed to built relationship')
 
-    def del_node(self, label=None, attrs=None, mode='one'):
+    def del_node(self,unique_key=None, label=None, attrs=None, mode='one'):
         """
         :param label: 需要删除的节点标签
         :param attrs: 需要删除的节点属性键值对
@@ -70,14 +73,14 @@ class Neo4j():
         """
         if mode == 'one':
             assert attrs, "The attr can't be None!"
-            name = list(attrs.keys())[0]
-            node = self.search_node(label, attrs)
-            self.graph.delete(node),print(f'「{attrs[name]}」: Node already deleted') if node else print(f'「{attrs[name]}」: Node not existed')
+            # name = list(attrs.keys())[0]
+            node = self.search_node(label, attrs,unique_key)
+            self.graph.delete(node),print(f'「{attrs[unique_key]}」: Node already deleted') if node else print(f'「{attrs[unique_key]}」: Node not existed')
         if mode == 'all':
             self.graph.delete_all()
             print('All nodes already deleted')
 
-    def updata_node(self, label, org_attrs, new_attrs):
+    def updata_node(self, label, org_attrs, new_attrs,unique_key):
         """
         :param label: 需要更新的节点
         :param org_attrs: 节点原有属性值
@@ -86,9 +89,9 @@ class Neo4j():
         """
         # org_attrs包含key即可
         assert org_attrs, "The attr can't be None!"
-        name = list(org_attrs.keys())[0]
-        node = self.search_node(label, org_attrs)
-        node.update(new_attrs),self.graph.push(node),print(f'「{org_attrs[name]}」: Node already updated') if node else print(f'「{org_attrs[name]}」: Node not existed')
+        # name = list(org_attrs.keys())[0]
+        node = self.search_node(label, org_attrs,unique_key)
+        node.update(new_attrs),self.graph.push(node),print(f'「{org_attrs[unique_key]}」: Node already updated') if node else print(f'「{org_attrs[unique_key]}」: Node not existed')
 
 
     def select(self, label=None, rel=None, condition=None,limit=25,reverse=False,att=None):
