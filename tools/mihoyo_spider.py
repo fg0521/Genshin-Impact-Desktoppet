@@ -481,24 +481,48 @@ class MaterialSpider(MiHoYoSpider):
             # break
 
 
+class InstanceSpider(MiHoYoSpider):
+    def __init__(self):
+        super().__init__()
+        self.instance_id = list(set(list(pd.read_csv('../rec_intention/kg_data/instance.csv')['mhy_id'])))
+        self.path = '../rec_intention/kg_data/to_do/label-instance.csv'
+
+    def parse(self):
+        for i in self.instance_id:
+            url = self.url + str(1814)
+            res = requests.get(url=url)
+            if res.status_code == 200:
+                data = eval(res.text)['data']['content']
+                pprint.pprint(data)
+                icon = data['icon']
+                ext = eval(data['ext'])['c_54']['filter']['text']
+                id = data['id']
+                name = data['title']
+                summary = data['summary']
+                text = data['content']
+                ss = [re.sub('<(.*?)>', '|', str(i)) for i in re.findall('获得方式：</label>(.*?)</td>', text)]
+
+            break
 
 if __name__ == "__main__":
-    df = pd.read_csv('../rec_intention/kg_data/done/label-material.csv')
-    df.drop(['label'],axis=1,inplace=True)
-    df1 = copy.deepcopy(df)
-    df1['icon'] = ''
-    for idx,row in df.iterrows():
-        id = row['mhy_id']
-        url = 'https://api-static.mihoyo.com/common/blackboard/ys_obc/v1/content/info?app_sn=ys_obc&content_id='+str(id)
-        res = requests.get(url)
-        if res.status_code == 200:
-            data = eval(res.text)['data']['content']
-            id = data['id']
-            icon = data['icon']
-            df1.loc[idx,'icon'] = icon
-            name = data['title']
-            print(name)
-        time.sleep(2)
-    df1['label'] = 'material'
-    df1.to_csv('../rec_intention/kg_data/done/label-material-cp.csv',index=False,encoding='utf-8')
+    ins = InstanceSpider()
+    ins.parse()
+    # df = pd.read_csv('../rec_intention/kg_data/done/label-material.csv')
+    # df.drop(['label'],axis=1,inplace=True)
+    # df1 = copy.deepcopy(df)
+    # df1['icon'] = ''
+    # for idx,row in df.iterrows():
+    #     id = row['mhy_id']
+    #     url = 'https://api-static.mihoyo.com/common/blackboard/ys_obc/v1/content/info?app_sn=ys_obc&content_id='+str(id)
+    #     res = requests.get(url)
+    #     if res.status_code == 200:
+    #         data = eval(res.text)['data']['content']
+    #         id = data['id']
+    #         icon = data['icon']
+    #         df1.loc[idx,'icon'] = icon
+    #         name = data['title']
+    #         print(name)
+    #     time.sleep(2)
+    # df1['label'] = 'material'
+    # df1.to_csv('../rec_intention/kg_data/done/label-material-cp.csv',index=False,encoding='utf-8')
 

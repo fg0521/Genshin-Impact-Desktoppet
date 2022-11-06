@@ -1,3 +1,4 @@
+import pprint
 import re
 
 import pandas as pd
@@ -11,30 +12,92 @@ def country2rel():
 def char2rel():
     df = pd.read_csv('../kg_data/done/label-character.csv')
     df = df[~df['name'].isin(['旅行者（荧）','旅行者（空）'])]
-    df = df[['name','element','country','break_material','skill_material','weapon_choice']]
+    df = df[['name','element','country','break_material','instance_material','weapon_choice']]
 
-    df1 = df[['name','element']]
-    df1['rel'] = 'element_is'
-    df1.to_csv('../kg_data/done/rel-character-element.csv',index=False,encoding='utf-8')
+    # df1 = df[['name','element']]
+    # df1['rel'] = 'element_is'
+    # df1.to_csv('../kg_data/done/rel-character-element.csv',index=False,encoding='utf-8')
+    #
+    # df2 = df[['name', 'country']]
+    # df2['rel'] = 'from'
+    # df2.to_csv('../kg_data/done/rel-character-country.csv',index=False,encoding='utf-8')
 
-    df2 = df[['name', 'country']]
-    df2['rel'] = 'from'
-    df2.to_csv('../kg_data/done/rel-character-country.csv',index=False,encoding='utf-8')
+    # df3 = df[['name','weapon_choice']]
+    # df3['weapon_choice'] = df3['weapon_choice'].apply(lambda x:list(eval(x).keys()))
+    # data = []
+    # for _,row in df3.iterrows():
+    #     weapons = row['weapon_choice']
+    #     name = row['name']
+    #     for w in weapons:
+    #         data.append({'name':name,'rel':'using','weapon':w})
+    # df3_cp = pd.DataFrame(data=data)
+    # df3_cp.to_csv('../kg_data/done/rel-character-weapon.csv', index=False, encoding='utf-8')
 
-    df3 = df[['name','weapon_choice']]
-    df3['weapon_choice'] = df3['weapon_choice'].apply(lambda x:list(eval(x).keys()))
+    # break_material,skill_material
+    for mat in ['break_material','instance_material']:
+        df6 = df[['name',mat]]
+        data = []
+        for _,row in df6.iterrows():
+            name = row['name']
+            breaking = eval(row[mat])
+            for b in breaking:
+                b = re.sub('\*\d+','',b)
+                data.append({'name':name,'rel':mat,'material':b})
+        pprint.pprint(data)
+        df6_cp = pd.DataFrame(data=data)
+        df6_cp.to_csv(f'../kg_data/done/rel-character-{mat}.csv',index=False,encoding='utf-8')
+
+
+def char2food():
+    df = pd.read_csv('../kg_data/done/label-food.csv')
+    df = df[['name','description']]
     data = []
-    for _,row in df3.iterrows():
-        weapons = row['weapon_choice']
+    for _,row in df.iterrows():
+        role = re.findall('(.*?)的特色料理',row['description'])
         name = row['name']
-        for w in weapons:
-            data.append({'name':name,'rel':'using','weapon':w})
+        if role:
+            data.append({'name':role[0],'rel':'characteristics_of_food','food':name})
+    pprint.pprint(data)
+    df_cp = pd.DataFrame(data=data)
+    df_cp.to_csv('../kg_data/done/rel-character-food.csv',index=False,encoding='utf-8')
 
-    df3_cp = pd.DataFrame(data=data)
-    df3_cp.to_csv('../kg_data/done/rel-character-weapon.csv', index=False, encoding='utf-8')
+def food2material():
+    df = pd.read_csv('../kg_data/done/label-food.csv')
+    df = df[['name', 'ingredient']]
+    data = []
+    for _,row in df.iterrows():
+        material = eval(row['ingredient'])
+        food = row['name']
+        for m in material:
+            m = re.sub('\*\d+','',m)
+            data.append({'food':food,'rel':'ingredient','material':m})
+    df_cp = pd.DataFrame(data=data)
+    df_cp.to_csv('../kg_data/done/rel-food-material.csv',index=False,encoding='utf-8')
 
-    # ,skill_material,weapon_choice
 
+def master2material():
+    df = pd.read_csv('../kg_data/done/label-master.csv')
+    df = df[['name','dropping']]
+    data=[]
+    for _,row in df.iterrows():
+        master = row['name']
+        for m in eval(row['dropping']):
+            data.append({'master':master,'rel':'drop_from','material':m})
+    df_cp = pd.DataFrame(data=data)
+    df_cp.to_csv('../kg_data/done/rel-master-material.csv',index=False,encoding='utf-8')
+
+
+def weapon2material():
+    df = pd.read_csv('../kg_data/done/label-weapon.csv')
+    df = df[['name','material']]
+    data = []
+    for _,row in df.iterrows():
+        weapon = row['name']
+        for m in eval(row['material']):
+            m= re.sub('\*\d+','',m)
+            data.append({'weapon':weapon,'rel':'breaking_material','material':m})
+    df_cp = pd.DataFrame(data=data)
+    df_cp.to_csv('../kg_data/done/rel-weapon-material.csv',index=False,encoding='utf-8')
 
 
 def look4material():
@@ -86,7 +149,8 @@ def look4material():
 
 """
 if __name__ == '__main__':
-    look4material()
+    weapon2material()
+    # look4material()
     # df = pd.read_csv('../kg_data/area_details.csv')
     # df['place'] = df['second_area']
     # df.drop(['first_id','first_area','second_id','second_area','id'],inplace=True,axis=1)
