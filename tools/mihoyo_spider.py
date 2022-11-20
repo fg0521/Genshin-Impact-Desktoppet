@@ -5,6 +5,7 @@ import re
 import time
 import pandas as pd
 import requests
+
 false = null = true = ''
 
 
@@ -14,7 +15,6 @@ class MiHoYoSpider():
         self.url = 'https://api-static.mihoyo.com/common/blackboard/ys_obc/v1/content/info?app_sn=ys_obc&content_id='
         self.path = 'your save path'
         self.id = 'id list for spider'
-
 
     def parse(self):
         """
@@ -50,33 +50,41 @@ class CharacterSpider(MiHoYoSpider):
                 icon = data['icon']
                 summary = data['summary']
                 html1 = data['contents'][0]['text']
-                introduce = re.findall('class="obc-tmp-character__value">(.*?)</div></div>', html1)
-                broken = re.findall(
-                    'class="obc-tmpl__icon-text">([\u4e00-\u9fa5]+)</span></a> <span class="obc-tmpl__icon-num">(\*[\d]+)</span>',
-                    html1)
-                desc = re.findall('pre-wrap;">(.*?)</p></td>', html1)
-                attr = re.findall('pre-wrap; text-align: center;">(.*?)</p>', html1)
-                weapons = re.findall(
-                    'alt="" class="obc-tmpl__icon"><span class="obc-tmpl__icon-text">([\u4e00-\u9fa5]+)</span></a> <!----></div></td>',
-                    html1)
-                html2 = data['contents'][1]['text']
-                attack = re.findall('class="obc-tmpl__icon-text">(.*?)</span> ', html2)
-                skill_desc = re.findall('obc-tmpl__pre-text">(.*?)</pre>', html2)
-                live_desc = re.findall('<td>(.*?)</td></tr><tr><td><div', html2)
-                skill_book = re.findall(
-                    '<span class="obc-tmpl__icon-text">([\u4e00-\u9fa5「」]+)</span></a> <span class="obc-tmpl__icon-num">(\*[\d]+)</span></div></div><div>',
-                    html2)
-                mz_desc = [i for i in attack if 'span' not in i and 'class' not in i]
-                mz_effect = [i for i in live_desc if 'span' not in i and 'class' not in i]
-                print(f'{i}:{role_name}')
-                df = pd.DataFrame(data=[{'编号': i, '名字': role_name, '介绍': info, '图片': icon, '总结': summary,
-                                         '信息': introduce, '突破材料': broken, '武器选择': desc, '圣遗物': attr, '武器': weapons,
-                                         'skill_book': skill_book, '命座描述': mz_desc, '技能描述': skill_desc, '命座': mz_effect}])
-
-                if os.path.exists(self.path):
-                    df.to_csv(self.path, mode='a', index=False, header=False, encoding='utf-8')
-                else:
-                    df.to_csv(self.path, index=False, encoding='utf-8')
+                shown = data['contents'][2]['text']
+                # pprint.pprint(shown)
+                txt = [re.sub('<(.*?)>', '', str(i)) for i in re.findall('style="white-space: pre-wrap;">(.*?)</p><p ',shown)]
+                with open('../rec_intention/yuanshen.txt','a+') as f:
+                    [f.write(i+'\n') for i in txt]
+                # pprint.pprint(txt)
+                # break
+                # introduce = re.findall('class="obc-tmp-character__value">(.*?)</div></div>', html1)
+                # broken = re.findall(
+                #     'class="obc-tmpl__icon-text">([\u4e00-\u9fa5]+)</span></a> <span class="obc-tmpl__icon-num">(\*[\d]+)</span>',
+                #     html1)
+                # desc = re.findall('pre-wrap;">(.*?)</p></td>', html1)
+                # attr = re.findall('pre-wrap; text-align: center;">(.*?)</p>', html1)
+                # weapons = re.findall(
+                #     'alt="" class="obc-tmpl__icon"><span class="obc-tmpl__icon-text">([\u4e00-\u9fa5]+)</span></a> <!----></div></td>',
+                #     html1)
+                # html2 = data['contents'][1]['text']
+                # attack = re.findall('class="obc-tmpl__icon-text">(.*?)</span> ', html2)
+                # skill_desc = re.findall('obc-tmpl__pre-text">(.*?)</pre>', html2)
+                # live_desc = re.findall('<td>(.*?)</td></tr><tr><td><div', html2)
+                # skill_book = re.findall(
+                #     '<span class="obc-tmpl__icon-text">([\u4e00-\u9fa5「」]+)</span></a> <span class="obc-tmpl__icon-num">(\*[\d]+)</span></div></div><div>',
+                #     html2)
+                # mz_desc = [i for i in attack if 'span' not in i and 'class' not in i]
+                # mz_effect = [i for i in live_desc if 'span' not in i and 'class' not in i]
+                # print(f'{i}:{role_name}')
+                # df = pd.DataFrame(data=[{'编号': i, '名字': role_name, '介绍': info, '图片': icon, '总结': summary,
+                #                          '信息': introduce, '突破材料': broken, '武器选择': desc, '圣遗物': attr, '武器': weapons,
+                #                          'skill_book': skill_book, '命座描述': mz_desc, '技能描述': skill_desc,
+                #                          '命座': mz_effect}])
+                #
+                # if os.path.exists(self.path):
+                #     df.to_csv(self.path, mode='a', index=False, header=False, encoding='utf-8')
+                # else:
+                #     df.to_csv(self.path, index=False, encoding='utf-8')
                 time.sleep(2)
 
     def clear(self):
@@ -88,7 +96,6 @@ class MasterSpider(MiHoYoSpider):
         super().__init__()
         self.master_id = list(pd.read_csv('../rec_intention/kg_data/mhy-id/master-id.csv')['mhy_id'])
         self.path = '../rec_intention/kg_data/to_do/label-master.csv'
-
 
     def parse(self):
         for i in self.master_id:
@@ -191,7 +198,7 @@ class WeaponSpider(MiHoYoSpider):
 
     def parse(self):
         for i in self.weapon_id:
-            url = self.url+str(i)
+            url = self.url + str(i)
             res = requests.get(url)
             if res.status_code == 200:
                 # pprint.pprint(eval(res.text))
@@ -200,18 +207,23 @@ class WeaponSpider(MiHoYoSpider):
                 id = data['id']
                 icon = data['icon']
                 ext = eval(eval(data['ext'])["c_5"]["filter"]["text"])
-                text = data['contents'][0]['text'].replace('\n','')
-                desc = [re.sub('<(.*?)>','',str(i)) for i in re.findall('装备描述(.*?)冒险等阶限制',text)]
-                limit = re.findall('obc-tmpl__rich-text">冒险等阶限制：(.*?)</td></tr>',text)
+                text = data['contents'][0]['text'].replace('\n', '')
+                desc = [re.sub('<(.*?)>', '', str(i)) for i in re.findall('装备描述(.*?)冒险等阶限制', text)]
+                limit = re.findall('obc-tmpl__rich-text">冒险等阶限制：(.*?)</td></tr>', text)
                 # getting = [re.sub('<(.*?)>','',str(i)) for i in re.findall('obc-tmpl__rich-text">获取途径：(.*?)</p></td></tr>',text)]
-                story = [re.sub('<(.*?)>','',str(i)) for i in re.findall('相关故事(.*?)</p></div>',text)]
-                material = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<span class="obc-tmpl__icon-text">(.*?)</span>',text)]
-                material_num = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<span class="obc-tmpl__icon-num">(.*?)</span>',text)]
-                grade = [re.sub('<(.*?)>','',str(i)) for i in re.findall('class="obc-tmpl__switch-btn">(.*?)</li>',text)]
-                effect = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<tbody><tr><td colspan="\d">(.*?)</li></ul></td></tr></tbody>',text)]
+                story = [re.sub('<(.*?)>', '', str(i)) for i in re.findall('相关故事(.*?)</p></div>', text)]
+                material = [re.sub('<(.*?)>', '', str(i)) for i in
+                            re.findall('<span class="obc-tmpl__icon-text">(.*?)</span>', text)]
+                material_num = [re.sub('<(.*?)>', '', str(i)) for i in
+                                re.findall('<span class="obc-tmpl__icon-num">(.*?)</span>', text)]
+                grade = [re.sub('<(.*?)>', '', str(i)) for i in
+                         re.findall('class="obc-tmpl__switch-btn">(.*?)</li>', text)]
+                effect = [re.sub('<(.*?)>', '', str(i)) for i in
+                          re.findall('<tbody><tr><td colspan="\d">(.*?)</li></ul></td></tr></tbody>', text)]
                 print(name)
-                data = [{'name':name,'id':id,'ext':ext,'desc':desc,'limit':limit,'story':story,
-                         'material':material,"material_num":material_num,'grade':grade,'effect':effect,'icon':icon}]
+                data = [{'name': name, 'id': id, 'ext': ext, 'desc': desc, 'limit': limit, 'story': story,
+                         'material': material, "material_num": material_num, 'grade': grade, 'effect': effect,
+                         'icon': icon}]
                 df = pd.DataFrame(data=data)
                 if os.path.exists(self.path):
                     df.to_csv(self.path, mode='a', index=False, header=False, encoding='utf-8')
@@ -222,25 +234,26 @@ class WeaponSpider(MiHoYoSpider):
     def clear(self):
         # name,id,ext,desc,limit,getting,story,material,"material_num",grade,effect
         df = pd.read_csv(self.path)
+
         def split_ext(x):
             x = eval(x)
-            res ={'武器类型':'None', '武器星级':'None', '属性加成':'None', '获取途径':'None'}
+            res = {'武器类型': 'None', '武器星级': 'None', '属性加成': 'None', '获取途径': 'None'}
             for i in x:
                 s = i.split('/')
                 if res[s[0]] != 'None':
-                    res[s[0]] = res[s[0]]+f"、{s[1]}"
+                    res[s[0]] = res[s[0]] + f"、{s[1]}"
                 else:
                     res[s[0]] = s[1]
-            res = [v for _,v in res.items()]
+            res = [v for _, v in res.items()]
             return '|'.join(res)
 
-        df['ext'] = df['ext'].apply(lambda x:split_ext(x))
+        df['ext'] = df['ext'].apply(lambda x: split_ext(x))
         df1 = df['ext'].str.split('|', expand=True)
-        df1.columns = ['weapon_type','rarity','attr_add','getting']
+        df1.columns = ['weapon_type', 'rarity', 'attr_add', 'getting']
         df = df.join(df1)
 
-        def skill(x,mode=0):
-            x= eval(x)
+        def skill(x, mode=0):
+            x = eval(x)
             if not x:
                 return 'None'
             else:
@@ -248,39 +261,40 @@ class WeaponSpider(MiHoYoSpider):
                     s = ''.join(re.findall('\)(.*?)·', x[0]))
                     return s if s else 'None'
                 else:
-                    sp = ''.join(re.findall('\)(.*?)·', x[0]))+'·'
-                    return x[0].replace(sp,'')
+                    sp = ''.join(re.findall('\)(.*?)·', x[0])) + '·'
+                    return x[0].replace(sp, '')
 
+        df['introd'] = df['desc'].apply(lambda x: skill(x, 0))
+        df['refine'] = df['desc'].apply(lambda x: skill(x, 1))
 
-        df['introd'] = df['desc'].apply(lambda x:skill(x,0))
-        df['refine'] = df['desc'].apply(lambda x:skill(x,1))
-
-        def add_material_num(name,num):
-            name,num = eval(name),eval(num)
+        def add_material_num(name, num):
+            name, num = eval(name), eval(num)
             index = name.index('摩拉')
             res = []
             for i in range(index):
-                res.append(name[i]+num[i])
+                res.append(name[i] + num[i])
             return str(res)
 
-        df['material'] = df.apply(lambda x:add_material_num(x['material'],x['material_num']),axis=1)
-        df['grade'] = df['grade'].apply(lambda x:[i.replace(' ','') for i in eval(x) if '角色' not in i])
+        df['material'] = df.apply(lambda x: add_material_num(x['material'], x['material_num']), axis=1)
+        df['grade'] = df['grade'].apply(lambda x: [i.replace(' ', '') for i in eval(x) if '角色' not in i])
 
-        def add_breaking(grade,effect):
-            grade,effect = grade,eval(effect)
+        def add_breaking(grade, effect):
+            grade, effect = grade, eval(effect)
             res = {}
             for i in range(len(grade)):
                 g = grade[i]
                 e = effect[i]
-                res[g]=e
+                res[g] = e
             return str(res)
-        df['breaking'] = df.apply(lambda x:add_breaking(x['grade'],x['effect']),axis=1)
-        df = df[['name','id','limit','story','material','icon','breaking','introd','refine','weapon_type','rarity','attr_add','getting']]
-        df['limit'] = df['limit'].apply(lambda x:eval(x)[0] if eval(x) else '无')
-        df['story'] = df['story'].apply(lambda x:''.join(eval(x)))
+
+        df['breaking'] = df.apply(lambda x: add_breaking(x['grade'], x['effect']), axis=1)
+        df = df[['name', 'id', 'limit', 'story', 'material', 'icon', 'breaking', 'introd', 'refine', 'weapon_type',
+                 'rarity', 'attr_add', 'getting']]
+        df['limit'] = df['limit'].apply(lambda x: eval(x)[0] if eval(x) else '无')
+        df['story'] = df['story'].apply(lambda x: ''.join(eval(x)))
         df['label'] = 'weapon'
         print(df.head(10))
-        df.to_csv('../rec_intention/kg_data/done/label-weapon.csv',index=False,encoding='utf-8')
+        df.to_csv('../rec_intention/kg_data/done/label-weapon.csv', index=False, encoding='utf-8')
 
 
 class NPCSpider(MiHoYoSpider):
@@ -291,38 +305,45 @@ class NPCSpider(MiHoYoSpider):
 
     def parse(self):
         for i in self.npc:
-            url = self.url+str(i)
+            url = self.url + str(i)
             res = requests.get(url)
-            if res.status_code ==200:
+            if res.status_code == 200:
                 data = eval(res.text)['data']['content']
                 name = data['title']
                 id = data['id']
                 icon = data['icon']
-                text = data['contents'][0]['text'].replace('\n','')
-                sex = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<td class="h3">性别</td> <td>(.*?)</td>',text)]
+                text = data['contents'][0]['text'].replace('\n', '')
+                sex = [re.sub('<(.*?)>', '', str(i)) for i in re.findall('<td class="h3">性别</td> <td>(.*?)</td>', text)]
                 sex = sex[0] if sex else ''
-                pos = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<td class="h3">位置</td> <td>(.*?)</td>',text)]
+                pos = [re.sub('<(.*?)>', '', str(i)) for i in re.findall('<td class="h3">位置</td> <td>(.*?)</td>', text)]
                 pos = pos[0] if pos else ''
-                task = [re.sub('<(.*?)>','',str(i)) for i in re.findall('<td class="h3">相关任务</td> <td>(.*?)</td>',text)]
+                task = [re.sub('<(.*?)>', '', str(i)) for i in
+                        re.findall('<td class="h3">相关任务</td> <td>(.*?)</td>', text)]
                 task = task[0] if task else ''
-                profession = [re.sub('<(.*?)>','',str(i)) for i in re.findall('class="obc-tmpl__rich-text"><p>(.*?)</p></td></tr>',text)]
+                profession = [re.sub('<(.*?)>', '', str(i)) for i in
+                              re.findall('class="obc-tmpl__rich-text"><p>(.*?)</p></td></tr>', text)]
                 profession = profession[0] if profession else ''
-                tips = [re.sub('<(.*?)>', '', str(i)) for i in re.findall('<p style="white-space: pre-wrap;">(.*?)</p></td></tr>', text)]
+                tips = [re.sub('<(.*?)>', '', str(i)) for i in
+                        re.findall('<p style="white-space: pre-wrap;">(.*?)</p></td></tr>', text)]
                 tips = list(set(tips))
-                print(id,name)
-                df = pd.DataFrame(data=[{'nhy_id':id,'name':name,'sex':sex,'pos':pos,'task':task,'profession':profession,'tips':tips,'icon':icon}])
+                print(id, name)
+                df = pd.DataFrame(data=[
+                    {'nhy_id': id, 'name': name, 'sex': sex, 'pos': pos, 'task': task, 'profession': profession,
+                     'tips': tips, 'icon': icon}])
                 # pprint.pprint(data)
                 if os.path.exists(self.path):
                     df.to_csv(self.path, mode='a', index=False, header=False, encoding='utf-8')
                 else:
                     df.to_csv(self.path, index=False, encoding='utf-8')
                 time.sleep(2)
+
     def clear(self):
         df = pd.read_csv(self.path)
-        df['task'] = df['task'].apply(lambda x:'暂无' if x in ['无','暂无数据','待录入'] else x)
-        df['profession'] = df['profession'].apply(lambda x:'暂无' if x in ['无','暂无数据','待录入'] else x)
-        df['tips'] = df['tips'].apply(lambda x:str([i for i in eval(x) if not re.findall('\[每(.*?)日\]|食谱：|\[每周\]| \* |\d',i)]))
-        df['tips'] = df['tips'].apply(lambda x:''.join(eval(x)))
+        df['task'] = df['task'].apply(lambda x: '暂无' if x in ['无', '暂无数据', '待录入'] else x)
+        df['profession'] = df['profession'].apply(lambda x: '暂无' if x in ['无', '暂无数据', '待录入'] else x)
+        df['tips'] = df['tips'].apply(
+            lambda x: str([i for i in eval(x) if not re.findall('\[每(.*?)日\]|食谱：|\[每周\]| \* |\d', i)]))
+        df['tips'] = df['tips'].apply(lambda x: ''.join(eval(x)))
         df.fillna('暂无', inplace=True, axis=1)
         df.to_csv('../rec_intention/kg_data/done/label-npc.csv', index=False, encoding='utf-8')
         print(df['tips'])
@@ -335,6 +356,7 @@ class BreakMaterialSpider(MiHoYoSpider):
     def clear(self):
         df = pd.read_csv('../rec_intention/kg_data/breaking_material.csv')
         df = df[['material_id', 'name', 'info']]
+
         def split_info(x, mode):
             x = (eval(x))
             x = [re.sub('[\d]+级\*(\d\d|\d)[；]*', '', i) for i in x]
@@ -369,7 +391,7 @@ class AreaSpider(MiHoYoSpider):
 
     def parse(self):
         # print(self.area_id)
-        a = [1413,115,247,120,121]
+        a = [1413, 115, 247, 120, 121]
         for i in a:
             url = self.url + str(i)
             res = requests.get(url)
@@ -380,37 +402,45 @@ class AreaSpider(MiHoYoSpider):
                     id = data['id']
                     icon = data['icon']
                     name = data['title']
-                    print(id, name,'get')
+                    print(id, name, 'get')
                     try:
                         text = data['contents'][0]['text']
                     except:
                         text = data['content']
 
-                    desc = [re.sub('<(.*?)>','|',str(i)) for i in re.findall('简述</td> <td>(.*?)</td>',text)]
-                    decryption =[re.sub('<(.*?)>','|',str(i)) for i in re.findall('<h2>机关</h2> (.*?)</tbody></table>',text)]
-                    evil_task = [re.sub('<(.*?)>','|',str(i)) for i in re.findall('魔神任务</td> <td>(.*?)</td>',text)]
-                    legend_task = [re.sub('<(.*?)>','|',str(i)) for i in re.findall('传说任务</td> <td>(.*?)</td>',text)]
-                    delegate_task = [re.sub('<(.*?)>','|',str(i)) for i in re.findall('委托任务</td> <td>(.*?)</td>',text)]
-                    world_task = [re.sub('<(.*?)>','|',str(i)) for i in re.findall('世界任务</td> <td>(.*?)</td>',text)]
-                    common_master = [re.sub('<(.*?)>','|',str(i)) for i in re.findall('普通怪物</td> <td>(.*?)</td>',text)]
-                    elite_master = [re.sub('<(.*?)>','|',str(i)) for i in re.findall('精英怪物</td> <td>(.*?)</td>',text)]
-                    boss_master = [re.sub('<(.*?)>','|',str(i)) for i in re.findall('BOSS</td> <td>(.*?)</td>',text)]
+                    desc = [re.sub('<(.*?)>', '|', str(i)) for i in re.findall('简述</td> <td>(.*?)</td>', text)]
+                    decryption = [re.sub('<(.*?)>', '|', str(i)) for i in
+                                  re.findall('<h2>机关</h2> (.*?)</tbody></table>', text)]
+                    evil_task = [re.sub('<(.*?)>', '|', str(i)) for i in re.findall('魔神任务</td> <td>(.*?)</td>', text)]
+                    legend_task = [re.sub('<(.*?)>', '|', str(i)) for i in re.findall('传说任务</td> <td>(.*?)</td>', text)]
+                    delegate_task = [re.sub('<(.*?)>', '|', str(i)) for i in
+                                     re.findall('委托任务</td> <td>(.*?)</td>', text)]
+                    world_task = [re.sub('<(.*?)>', '|', str(i)) for i in re.findall('世界任务</td> <td>(.*?)</td>', text)]
+                    common_master = [re.sub('<(.*?)>', '|', str(i)) for i in
+                                     re.findall('普通怪物</td> <td>(.*?)</td>', text)]
+                    elite_master = [re.sub('<(.*?)>', '|', str(i)) for i in
+                                    re.findall('精英怪物</td> <td>(.*?)</td>', text)]
+                    boss_master = [re.sub('<(.*?)>', '|', str(i)) for i in re.findall('BOSS</td> <td>(.*?)</td>', text)]
 
-                    role_material = [re.sub('<(.*?)>','|',str(i)) for i in re.findall('角色养成素材</td> <td>(.*?)</td>',text)]
-                    ingredient = [re.sub('<(.*?)>','|',str(i)) for i in re.findall('食材</td> <td>(.*?)</td>',text)]
-                    material = [re.sub('<(.*?)>','|',str(i)) for i in re.findall('材料</td> <td>(.*?)</td>',text)]
-                    specialty = [re.sub('<(.*?)>','|',str(i)) for i in re.findall('区域特产</td> <td>(.*?)</td>',text)]
-
+                    role_material = [re.sub('<(.*?)>', '|', str(i)) for i in
+                                     re.findall('角色养成素材</td> <td>(.*?)</td>', text)]
+                    ingredient = [re.sub('<(.*?)>', '|', str(i)) for i in re.findall('食材</td> <td>(.*?)</td>', text)]
+                    material = [re.sub('<(.*?)>', '|', str(i)) for i in re.findall('材料</td> <td>(.*?)</td>', text)]
+                    specialty = [re.sub('<(.*?)>', '|', str(i)) for i in re.findall('区域特产</td> <td>(.*?)</td>', text)]
 
                     # pprint.pprint(data)
                     df = pd.DataFrame(
-                        data=[{'mhy_id': id, 'name': name, 'desc': str(desc), 'decryption': str(decryption), 'evil_task': str(evil_task),
-                               'legend_task': str(legend_task), 'delegate_task':str(delegate_task),'world_task':str(world_task),
-                               'common_master':str(common_master),'elite_master':str(elite_master),'boss_master':str(boss_master),
-                               'role_material':str(role_material),'ingredient':str(ingredient),'material':str(material),'specialty':str(specialty),
+                        data=[{'mhy_id': id, 'name': name, 'desc': str(desc), 'decryption': str(decryption),
+                               'evil_task': str(evil_task),
+                               'legend_task': str(legend_task), 'delegate_task': str(delegate_task),
+                               'world_task': str(world_task),
+                               'common_master': str(common_master), 'elite_master': str(elite_master),
+                               'boss_master': str(boss_master),
+                               'role_material': str(role_material), 'ingredient': str(ingredient),
+                               'material': str(material), 'specialty': str(specialty),
                                'icon': icon}])
                     if os.path.exists(self.path):
-                        df.to_csv(self.path, mode='a', index=False, header=False,encoding='utf-8')
+                        df.to_csv(self.path, mode='a', index=False, header=False, encoding='utf-8')
                     else:
                         df.to_csv(self.path, index=False, encoding='utf-8')
                 except:
@@ -423,7 +453,9 @@ class AreaSpider(MiHoYoSpider):
         df = pd.read_csv(self.path)
         # df['sec_area'] = df['desc'].apply(lambda x:)
         for col in list(df.columns)[3:-1]:
-            df[col] = df[col].apply(lambda x:[i for i in eval(x)[0].split('|') if i.replace(' ','').replace('非战斗类','').replace('战斗类','')] if eval(x) else '暂无')
+            df[col] = df[col].apply(lambda x: [i for i in eval(x)[0].split('|') if
+                                               i.replace(' ', '').replace('非战斗类', '').replace('战斗类', '')] if eval(
+                x) else '暂无')
         # print(df['delegate_task'])
         # df1 = pd.read_csv('../rec_intention/kg_data/mhy-id/area-id.csv')
         # area_dic = {}
@@ -434,7 +466,7 @@ class AreaSpider(MiHoYoSpider):
         # for idx,row in df.iterrows():
         #     df.loc[idx,'sec_area'] = area_dic[row['name']]['second_area']
         #     df.loc[idx,'country'] = area_dic[row['name']]['country']
-        df.to_csv('../rec_intention/kg_data/done/label-area.csv',index=False,encoding='utf-8')
+        df.to_csv('../rec_intention/kg_data/done/label-area.csv', index=False, encoding='utf-8')
 
 
 class MaterialSpider(MiHoYoSpider):
@@ -455,23 +487,24 @@ class MaterialSpider(MiHoYoSpider):
                     id = data['id']
                     icon = data['icon']
                     name = data['title']
-                    print(id, name,'get')
+                    print(id, name, 'get')
                     try:
                         text = data['contents'][0]['text']
                     except:
                         text = data['content']
 
-                    getting = [re.sub('<(.*?)>','|',str(i)) for i in re.findall('获得方式：</label>(.*?)</td>',text)]
-                    description =[re.sub('<(.*?)>','|',str(i)) for i in re.findall('描述：(.*?)</p></td>',text)]
-                    using = [re.sub('<(.*?)>','|',str(i)) for i in re.findall('用途：(.*?)</p></td>',text)]
+                    getting = [re.sub('<(.*?)>', '|', str(i)) for i in re.findall('获得方式：</label>(.*?)</td>', text)]
+                    description = [re.sub('<(.*?)>', '|', str(i)) for i in re.findall('描述：(.*?)</p></td>', text)]
+                    using = [re.sub('<(.*?)>', '|', str(i)) for i in re.findall('用途：(.*?)</p></td>', text)]
 
                     # pprint.pprint(data)
                     # mhy_id,name,type,getting,description,using,label
                     df = pd.DataFrame(
-                        data=[{'mhy_id': id, 'name': name,'type':'cooking', 'description': str(description), 'getting': str(getting), 'using': str(using),
-                               'icon': icon,'label':'material'}])
+                        data=[{'mhy_id': id, 'name': name, 'type': 'cooking', 'description': str(description),
+                               'getting': str(getting), 'using': str(using),
+                               'icon': icon, 'label': 'material'}])
                     if os.path.exists(self.path):
-                        df.to_csv(self.path, mode='a', index=False, header=False,encoding='utf-8')
+                        df.to_csv(self.path, mode='a', index=False, header=False, encoding='utf-8')
                     else:
                         df.to_csv(self.path, index=False, encoding='utf-8')
                 except:
@@ -488,25 +521,145 @@ class InstanceSpider(MiHoYoSpider):
         self.path = '../rec_intention/kg_data/to_do/label-instance.csv'
 
     def parse(self):
+
+        # for i in [292,324,4469,2291,299,2293,301,4470]:
+        # for i in [4484,4485,4488,4810,4818,4817,1781,1407,2366,2637,2866,4483,2330,670,2309,671,707]:
+        # for i in [373,374,1782,1813,376,377,375,2311,3163,3889,4468,1378]:
+        # for i in [381, 1239, 1814, 3580, 2665]:
         for i in self.instance_id:
-            url = self.url + str(1814)
+            url = self.url + str(i)
             res = requests.get(url=url)
             if res.status_code == 200:
                 data = eval(res.text)['data']['content']
-                pprint.pprint(data)
+                # pprint.pprint(data)
                 icon = data['icon']
-                ext = eval(data['ext'])['c_54']['filter']['text']
                 id = data['id']
                 name = data['title']
                 summary = data['summary']
-                text = data['content']
-                ss = [re.sub('<(.*?)>', '|', str(i)) for i in re.findall('获得方式：</label>(.*?)</td>', text)]
+                print(summary)
+                try:
+                    text = data['contents'][0]['text']
+                except:
+                    text = data['content']
+                description = [re.sub('<(.*?)>', '', str(i)) for i in re.findall('秘境简述</td> <td>(.*?)</td>', text)]
+                entrance_description = [re.sub('<(.*?)>', '', str(i)) for i in
+                                        re.findall('秘境入口简述</td> <td>(.*?)</td>', text)]
+                consumption = [re.sub('<(.*?)>', '', str(i)) for i in re.findall('秘境消耗</td> <td>(.*?)</td>', text)]
+                online = [re.sub('<(.*?)>', '', str(i)) for i in re.findall('联机</td> <td>(.*?)</td>', text)]
+                task = [re.sub('<(.*?)>', '', str(i)) for i in re.findall('任务本</td> <td>(.*?)</td>', text)]
+                abnormal_situation = [re.sub('<(.*?)>', '|', str(i)) for i in
+                                      re.findall('                (.*?)</p></td></tr>', text)]
+                master = [re.sub('<(.*?)>', '|', str(i)) for i in re.findall('<br><span>(.*?)</span></a></td>', text)]
+                master = list(set(master))
+                fix_product = ['摩拉', '冒险阅历']
+                if '角色天赋培养素材' in summary:
+                    abnormal_situation = [i for i in abnormal_situation[0].split('|') if
+                                          re.findall('[\u4e00-\u9fa5]+', i)]
+                    date = [re.sub('<(.*?)>', '|', str(i)) for i in
+                            re.findall('奖励类型</p></td>(.*?)</p></td></tr>', text)]
+                    date = [j for j in date[0].split('|') if j]
+                    prob_product = [re.sub('<(.*?)>', '|', str(i)) for i in
+                                    re.findall('data-type="obc-content" target="_blank">(.*?)</a></p></td><td', text)]
+                    prob_product_cp = []
+                    [prob_product_cp.extend([i for i in j.split("|") if re.findall('教导|指引|哲学', i)]) for j in
+                     prob_product]
+                    prob_product = [set(), set(), set()]
+                    [prob_product[i % 3].add(prob_product_cp[i]) for i in range(len(prob_product_cp))]
+                    prob_product = [list(i) for i in prob_product]
+                    for i in range(0, 6, 2):
+                        data.append({'nhy_id': id, 'name': name, 'sec_instance': date[i],
+                                     'description': description[0].replace(',', '，'),
+                                     'entrance_description': entrance_description[0].replace(',', '，'),
+                                     'consumption': consumption[0].replace(',', '，'),
+                                     'online': online[0].replace(',', '，'), 'task': task[0].replace(',', '，'),
+                                     'date': date[i + 1],
+                                     'prob_product': prob_product[i // 2], 'fix_product': fix_product,
+                                     'master': master, 'icon': icon,
+                                     'abnormal_situation': ''.join(abnormal_situation[:-1]).replace(',', '，'),
+                                     'recommended_element': abnormal_situation[-1]})
+                elif '武器突破素材' in summary:
+                    abnormal_situation = [i for i in abnormal_situation[0].split('|') if
+                                          re.findall('[\u4e00-\u9fa5]+', i)]
+                    date = [re.sub('<(.*?)>', '|', str(i)) for i in re.findall('）</span></p></td>(.*?)掉落数', text)]
+                    date = [j for j in date[0].split('|') if j]
+                    prob_product = [re.sub('<(.*?)>', '', str(i)) for i in
+                                    re.findall('data-type="obc-content" target="_blank">(.*?)</a></p></td><td', text)]
+                    prob_product_cp = [set(), set(), set()]
+                    [prob_product_cp[i % 3].add(prob_product[i]) for i in range(len(prob_product))]
+                    prob_product = [list(i) for i in prob_product_cp]
+                    data = []
+                    for i in range(0, 6, 2):
+                        data.append({'nhy_id': id, 'name': name, 'sec_instance': date[i],
+                                     'description': description[0].replace(',', '，'),
+                                     'entrance_description': entrance_description[0].replace(',', '，'),
+                                     'consumption': consumption[0].replace(',', '，'),
+                                     'online': online[0].replace(',', '，'), 'task': task[0].replace(',', '，'),
+                                     'date': date[i + 1],
+                                     'prob_product': prob_product[i // 2], 'fix_product': fix_product,
+                                     'master': master, 'icon': icon,
+                                     'abnormal_situation': ''.join(abnormal_situation[:-1]).replace(',', '，'),
+                                     'recommended_element': abnormal_situation[-1]})
+                elif '试炼秘境' in summary:
+                    ext = eval(data['ext'])['c_54']['filter']['text']
+                    recommended_element = eval(ext)[-1].replace('推荐元素/', '').replace('元素', '')
+                    entrance_description = [re.sub('<(.*?)>', '', str(i)) for i in
+                                            re.findall('pre-wrap;">(.*?)</p></td>', text)]
+                    data = [{'nhy_id': id, 'name': name, 'sec_instance': '',
+                             'description': description[0].replace(',', '，'),
+                             'entrance_description': entrance_description[0].replace(',', '，'),
+                             'consumption': '',
+                             'online': '否',
+                             'task': '否',
+                             'date': '',
+                             'prob_product': '', 'fix_product': fix_product,
+                             'master': master, 'icon': icon,
+                             'abnormal_situation': '',
+                             'recommended_element': recommended_element}]
+                elif '圣遗物' in summary:
+                    abnormal_situation = [i for i in abnormal_situation[0].split('|') if
+                                          re.findall('[\u4e00-\u9fa5]+', i)]
 
-            break
+                    prob_product = [re.sub('<(.*?)>', '', str(i)) for i in
+                                    re.findall('target="_blank">(.*?)</a>', text)]
+                    prob_product = list(set(prob_product))
+
+                    data = [{'nhy_id': id, 'name': name, 'sec_instance': '',
+                             'description': description[0].replace(',', '，'),
+                             'entrance_description': entrance_description[0].replace(',', '，'),
+                             'consumption': consumption[0].replace(',', '，'),
+                             'online': online[0].replace(',', '，'), 'task': task[0].replace(',', '，'),
+                             'date': '',
+                             'prob_product': prob_product, 'fix_product': fix_product,
+                             'master': master, 'icon': icon,
+                             'abnormal_situation': ''.join(abnormal_situation[:-1]).replace(',', '，'),
+                             'recommended_element': abnormal_situation[-1]}]
+
+                elif '角色培养素材' in summary:
+                    prob_product = [re.sub('<(.*?)>', '', str(i)) for i in re.findall('target="_blank">(.*?)</a>', text)
+                                    if len(i) < 15]
+                    prob_product = list(set(prob_product))
+                    data = [{'nhy_id': id, 'name': name, 'sec_instance': '',
+                             'description': description[0].replace(',', '，'),
+                             'entrance_description': entrance_description[0].replace(',', '，'),
+                             'consumption': consumption[0].replace(',', '，'),
+                             'online': online[0].replace(',', '，'), 'task': task[0].replace(',', '，'),
+                             'date': '',
+                             'prob_product': prob_product, 'fix_product': fix_product,
+                             'master': master, 'icon': icon,
+                             'abnormal_situation': '',
+                             'recommended_element': ''}]
+                df = pd.DataFrame(data=data)
+                if os.path.exists(self.path):
+                    df.to_csv(self.path, mode='a', index=False, header=False, encoding='utf-8')
+                else:
+                    df.to_csv(self.path, index=False, encoding='utf-8')
+                time.sleep(2)
+
+        
 
 if __name__ == "__main__":
-    ins = InstanceSpider()
-    ins.parse()
+    char = CharacterSpider()
+    char.parse()
     # df = pd.read_csv('../rec_intention/kg_data/done/label-material.csv')
     # df.drop(['label'],axis=1,inplace=True)
     # df1 = copy.deepcopy(df)
@@ -525,4 +678,3 @@ if __name__ == "__main__":
     #     time.sleep(2)
     # df1['label'] = 'material'
     # df1.to_csv('../rec_intention/kg_data/done/label-material-cp.csv',index=False,encoding='utf-8')
-

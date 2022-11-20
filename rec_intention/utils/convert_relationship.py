@@ -7,7 +7,7 @@ def country2rel():
     df = pd.read_csv('../kg_data/mhy-id/area-id.csv')
     df.columns=['mhy_id','area','place','country']
     df.drop(['mhy_id'],inplace=True,axis=1)
-    df.to_csv('../kg_data/done/rel-country-area-place.csv',index=False,encoding='utf-8')
+    df.to_csv('../kg_data/done/rel-area-place.csv',index=False,encoding='utf-8')
 
 def char2rel():
     df = pd.read_csv('../kg_data/done/label-character.csv')
@@ -136,20 +136,23 @@ def look4material():
     print(add_material)
     df4.to_csv('../kg_data/add_material.csv', index=False, encoding='utf-8')
 
+def instance2material():
+    df = pd.read_csv('../kg_data/done/label-instance.csv')
+    data = []
+    for _,row in df.iterrows():
+        if row['sec_instance']!='暂无':
+            for i in eval(row['prob_product']):
+                data.append({'node1':i,'rel':'get_from','node2':row['name']})
+    df1 = pd.DataFrame(data=data)
+    df1.to_csv('../kg_data/done/rel-instance-material.csv', index=False, encoding='utf-8')
 
-"""
-{'钩钩果', '盐', '须弥蔷薇', '秃秃豆', '龙嗣伪鳍', '面粉', '绝云椒椒', '落落莓', '胡椒', '火腿', '风车菊', '蘑菇', '鳗肉', 
-'番茄', '鸟蛋', '琉璃百合', '松茸', '劫波莲', '竹笋', '圣金虫', '海草', '日落果', '熏禽肉', '珊瑚真珠', '牛奶', '虾仁', 
-'奶酪', '小灯草', '血斛', '赤念果', '星蕈', '培根', '蟹黄', '慕风蘑菇', '幽灯蕈', '稻米', '绯樱绣球', '祸神之禊泪', 
-'月莲', '夜泊石', '卷心菜', '晶化骨髓', '甜甜花', '霓裳花', '苹果', '金鱼草', '凶将之手眼', '胡萝卜', '奶油', '薄荷', 
-'蒲公英籽', '冷鲜肉', '枣椰', '鬼兜虫', '塞西莉亚花', '天云草实', '莲蓬', '星螺', '摩拉', '兽境王器', '黄油', '兽肉', 
-'松果', '禽肉', '嘟嘟莲', '帕蒂沙兰', '糖', '豆腐', '生长碧翡碎屑', '洋葱', '螃蟹', '香肠', '石珀', '堇瓜', '鱼肉', 
-'树王圣体菇', '马尾', '琉璃袋', '鸣草', '清心', '香辛料', '树莓', '海灵芝', '杏仁', '墩墩桃', '果酱', '土豆', '万劫之真意', '白萝卜'}
 
-
-"""
 if __name__ == '__main__':
-    weapon2material()
+    df = pd.read_csv('../kg_data/done/label-instance.csv')
+    df1 = pd.DataFrame()
+    df1['name'] = df['name']
+    df1['rel']='locate_in'
+    df1.to_csv('../kg_data/done/rel-instance-place.csv', index=False, encoding='utf-8')
     # look4material()
     # df = pd.read_csv('../kg_data/area_details.csv')
     # df['place'] = df['second_area']
