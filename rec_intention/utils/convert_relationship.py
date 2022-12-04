@@ -49,7 +49,7 @@ def char2rel():
 
 
 def char2food():
-    df = pd.read_csv('../kg_data/done/label-food.csv')
+    df = pd.read_csv('../kg_data/label-food.csv')
     df = df[['name','description']]
     data = []
     for _,row in df.iterrows():
@@ -62,7 +62,7 @@ def char2food():
     df_cp.to_csv('../kg_data/done/rel-character-food.csv',index=False,encoding='utf-8')
 
 def food2material():
-    df = pd.read_csv('../kg_data/done/label-food.csv')
+    df = pd.read_csv('../kg_data/label-food.csv')
     df = df[['name', 'ingredient']]
     data = []
     for _,row in df.iterrows():
@@ -102,7 +102,7 @@ def weapon2material():
 
 def look4material():
     df = pd.read_csv('../kg_data/done/label-character.csv')
-    df1 = pd.read_csv('../kg_data/done/label-food.csv')
+    df1 = pd.read_csv('../kg_data/label-food.csv')
     df2 = pd.read_csv('../kg_data/done/label-material.csv')
     material = []
     for _,row in df.iterrows():
@@ -146,17 +146,35 @@ def instance2material():
     df1 = pd.DataFrame(data=data)
     df1.to_csv('../kg_data/done/rel-instance-material.csv', index=False, encoding='utf-8')
 
+def character2artifacts():
+    df= pd.read_csv('../kg_data/done/label-artifacts.csv')
+    data = []
+    for idx,row in df.iterrows():
+        relic = row['name']
+        roles = eval(row['role'])
+        if roles:
+            for r in roles:
+                data.append({'node1':r,'rel':'artifacts','node2':relic})
+    df1 = pd.DataFrame(data=data)
+    df1.to_csv('../kg_data/done/rel-character-artifacts.csv', index=False, encoding='utf-8')
+
+def artifacts2instance():
+    df = pd.read_csv('../kg_data/done/label-artifacts.csv')
+    data = []
+    for idx, row in df.iterrows():
+        relic = row['name']
+        getting = eval(row['getting'])
+        if getting:
+            for r in getting:
+                data.append({'node1': relic, 'rel': 'get_from', 'node2': r})
+    df1 = pd.DataFrame(data=data)
+    df1.to_csv('../kg_data/done/rel-instance-artifacts.csv', index=False, encoding='utf-8')
 
 if __name__ == '__main__':
-    df = pd.read_csv('../kg_data/done/label-instance.csv')
-    df1 = pd.DataFrame()
-    df1['name'] = df['name']
-    df1['rel']='locate_in'
-    df1.to_csv('../kg_data/done/rel-instance-place.csv', index=False, encoding='utf-8')
-    # look4material()
-    # df = pd.read_csv('../kg_data/area_details.csv')
-    # df['place'] = df['second_area']
-    # df.drop(['first_id','first_area','second_id','second_area','id'],inplace=True,axis=1)
-    # df['mhy_id'] = [i for i in range(1,len(df)+1)]
-    # df['label']='place'
-    # df.to_csv('../kg_data/done/label-place.csv',index=False,encoding='utf-8')
+    # df= pd.read_csv('../kg_data/done/label-master.csv')
+    # # mhy_id, name, dropping, attack, element, weakness, introduction, label
+    # df['attack'] = df['attack'].apply(lambda x:re.sub('\'\[]','',x))
+    # df['weakness'] = df['weakness'].apply(lambda x:''.join(eval(x)))
+    # df['introduction'] = df['introduction'].apply(lambda x:''.join(eval(x)))
+    # df.to_csv('../kg_data/done/label-master.csv', index=False, encoding='utf-8')
+    food2material()

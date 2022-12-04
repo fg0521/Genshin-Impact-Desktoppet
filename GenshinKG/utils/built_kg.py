@@ -1,14 +1,8 @@
+# -*- coding:utf-8 -*-
+# by: Slash
+# date: 2022-12-04
+# summary: 生成原神知识图谱 需要连接neo4j数据库
 import pandas
-
-# Slash: KnowledgeGraph 2.0
-# 集成类TranslateKG，合并原有的三个类，增加可选项，提高代码利用率
-# 新增函数get_obj2att，来生成所需要的关系-主体-属性字典
-# 新增 description节点用于存放知识图谱的基本描述信息,随知识图谱的更新而更新
-
-import copy
-import time
-import pprint
-import re
 import pandas as pd
 from connNeo4j import Neo4j
 
@@ -23,6 +17,9 @@ neo4j = Neo4j(config=neo4j_config)
 
 class YuanShen():
     def __init__(self):
+        """
+        读取文件 删除一些无需导入的属性
+        """
         self.character = pd.read_csv('../kg_data/done/label-character.csv')
         self.character.drop(
             ['element', 'country', 'break_material', 'skill_material', 'weapon_choice', 'constellation'], axis=1,
@@ -80,14 +77,12 @@ class YuanShen():
             for data in ['self.character', 'self.material', 'self.area', 'self.element', 'self.weapon',
                          'self.artifacts',
                          'self.master', 'self.food', 'self.npc', 'self.country', 'self.place', 'self.instance']:
-                # for data in ['self.material']:
                 df = eval(data)
                 df.fillna('暂无', inplace=True)
                 df['mhy_id'] = df['mhy_id'].apply(lambda x: str(x))
-                # df.drop(['label'], inplace=True, axis=1)
                 df = df.to_dict(orient='records')
                 label = data.replace('self.', '')
-                unique_key = 'name' if label in ['instance', 'food','artifacts'] else 'mhy_id'
+                unique_key = 'name' if label in ['instance', 'food','artifacts'] else 'mhy_id'  # instance food artifacts 这三类是没有米游社ID号的
                 [neo4j.create_node(label=label, attrs=i, unique_key=unique_key) for i in df]
         if relationship:
             character = self.character.to_dict(orient='records')
@@ -172,9 +167,7 @@ class YuanShen():
             self.create_relationship(rel_df=instance_artifacts, node1=artifacts, node2=instance,
                                      label1='artifacts', label2='instance')
 
-
-
 if __name__ == '__main__':
     # neo4j.del_node(mode='all')
     kg = YuanShen()
-    kg.built(relationship=True)
+    kg.built(relationship=True,node=True)

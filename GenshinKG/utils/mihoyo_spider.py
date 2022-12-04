@@ -1,3 +1,7 @@
+# -*- coding:utf-8 -*-
+# by: Slash
+# date: 2022-12-04
+# summary: 米游社爬虫 用于获取数据
 import copy
 import json
 import os
@@ -6,10 +10,6 @@ import re
 import time
 import pandas as pd
 import requests
-# -*- coding:utf-8 -*-
-# coding=gb2312
-
-
 
 false = null = true = ''
 
@@ -161,57 +161,7 @@ class FoodSpider(MiHoYoSpider):
         self.path = '../rec_intention/kg_data/to_do/label-food.csv'
 
     def parse(self):
-        for i in [2455, 2567, 2607, 2762, 2763, 2764, 2765, 2766, 2767, 2768, 2769, 2770, 2771, 2772, 2775, 2824, 2854,
-                  2855, 2873, 2876, 3051, 3052, 3053, 3054, 3055, 3056, 3057, 3058, 3059, 3060, 3061, 3062, 3164, 3165,
-                  3166, 3379, 3426, 3530, 3567, 3577, 3654, 3865, 3914, 3964, 4338, 4339, 4387, 4388, 4389, 4390, 4538,
-                  4539, 4608, 4635, 4636, 4637, 4638, 4639, 4640, 4755, 4863, 4893, 4894, 4895, 4896, 4897, 4898]:
-            try:
-                foods = []
-                url = 'https://api-static.mihoyo.com/common/blackboard/ys_obc/v1/content/info?app_sn=ys_obc&content_id=' + str(
-                    i)
-                res = requests.get(url)
-                if res.status_code == 200:
-                    data = eval(res.text)['data']['content']
-                    try:
-                        food_desc = eval(data['ext'])['c_21']['filter']['text']
-
-                    except:
-                        food_desc = []
-                    text = data['contents'][0]['text']
-                    # pprint.pprint(data)
-                    name = re.findall('名称：(.*?)<', text)
-
-                    try:
-                        material = re.findall('class="obc-tmpl__icon-text">([\u4e00-\u9fa5]+)</span></a> <span ', text)
-                        num = re.findall('class="obc-tmpl__icon-num">(\*\d+)</span></div>', text)
-                    except:
-                        material, num = [], []
-                    descs = re.findall('描述：(.*?)<', text)
-                    effect = re.findall('使用效果：(.*?)<', text)
-                    get_method = re.findall('获得方式：(.*?)<', text)
-                    food_map = re.findall('食谱获得：(.*?)</p>', text)
-                    print(i, name)
-                    # print(name,material,num,descs,effect,get_method,food_map)
-                    # foods.append(
-                    #     {'food_id': i, 'info': food_desc, 'name': name, 'material': material, 'num': num,'descs':descs,
-                    #                        'effect':effect,'method':get_method,'get':food_map})
-                    mat_num = list(set([material[i] + num[i] for i in range(len(num))]))
-                    for k in range(len(name)):
-                        foods.append({'food_id': i, 'info': food_desc, 'name': name[k], 'material': str(mat_num),
-                                      'desc': descs[k],
-                                      'effect': effect[k], 'method': get_method[k], 'get': food_map[k]})
-
-                    df = pd.DataFrame(foods)
-                    if os.path.exists('../rec_intention/kg_data/food.csv'):
-                        df.to_csv('../rec_intention/kg_data/food.csv', mode='a', index=False, header=False,
-                                  encoding='utf-8')
-                    else:
-                        df.to_csv('../rec_intention/kg_data/food.csv', index=False, encoding='utf-8')
-
-            except Exception as e:
-                print(i)
-                continue
-            time.sleep(2)
+        pass
 
     def clear(self):
         df = pd.read_csv('../rec_intention/kg_data/food.csv')
@@ -979,24 +929,6 @@ class ArtifactsSpider():
 
 
 if __name__ == "__main__":
-    url = 'https://api-static.mihoyo.com/common/blackboard/ys_obc/v1/content/info?app_sn=ys_obc&content_id='
-    df = pd.read_csv('../rec_intention/kg_data/label-food.csv')
-    id = list(set(df['mhy_id'].tolist()))
-    result = {}
-    for i in id:
-        res = requests.get(url+str(i))
-        # print(res)
-        if res.status_code ==200:
-            text = json.loads(res.text)['data']['content']['contents'][0]['text']
-            # pprint.pprint(text)
-            icon = [re.sub('<(.*?)>', '', str(i)) for i in re.findall('src="(.*?)"></td>', text)]
-            name = [re.sub('<(.*?)>', '', str(i)) for i in re.findall('名称：(.*?)</td>', text)]
-            for i in range(len(name)):
-                n = re.sub('[^\u4e00-\u9fa5]+','',name[i])
-                result[n] = icon[i]
-    print(result)
-
-    df['icon'] = df['name'].apply(lambda x:result[re.sub('[^\u4e00-\u9fa5]+','',x)])
-    df.to_csv('../rec_intention/kg_data/done/label-food2.csv',index=False,encoding='utf-8')
+    pass
 
 
