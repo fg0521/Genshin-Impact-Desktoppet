@@ -4,6 +4,7 @@ png
 .DS_Store
 *.iml
 *.xml
+*.xmind
 DesktopPet1.0
 rec_intention/pre_train_model
 /rec_intention/checkpoints/
